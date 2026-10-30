@@ -3,24 +3,30 @@
   "promptSuffix": "Decide any open details yourself instead of asking.",
   "models": [
     {
-      "provider": "gpt-5-mini",
-      "apiKey": "$AZURE_GPT_KEY"
+      "provider": "azure:gpt-5-mini",
+      "apiKey": "$AZURE_GPT_KEY",
+      "reasoningEffort": "high"
     },
     {
-      "provider": "gpt-5.4-mini",
-      "apiKey": "$AZURE_GPT_KEY"
+      "provider": "azure:gpt-5.4-mini",
+      "apiKey": "$AZURE_GPT_KEY",
+      "reasoningEffort": "high"
     },
     {
-      "provider": "gpt-6-astra",
-      "apiKey": "$AZURE_GPT_KEY"
+      "provider": "azure:gpt-6-astra",
+      "apiKey": "$AZURE_GPT_KEY",
+      "cacheBreakpoint": true
     },
     {
-      "provider": "gpt-6.1-sol",
-      "apiKey": "$AZURE_GPT_SOL_KEY"
+      "provider": "azure:gpt-6.1-sol",
+      "apiKey": "$AZURE_GPT_SOL_KEY",
+      "baseUrl": "https://controller-mes-resource.services.ai.azure.com/openai/v1",
+      "cacheBreakpoint": true
     },
     {
-      "provider": "Mistral-Large-3",
-      "apiKey": "$AZURE_GPT_KEY"
+      "provider": "azure:mistral-large-3",
+      "apiKey": "$AZURE_GPT_KEY",
+      "chatCompletions": true
     }
   ],
   "plans": {

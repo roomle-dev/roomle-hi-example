@@ -7,14 +7,20 @@ The launcher that starts the example and the chat of the example page. How the c
 ## The launcher — `minimal-hi-example/start.mjs`
 
 The root `start` and `dev` scripts invoke `node minimal-hi-example/start.mjs` directly, with
-`--dev` for the local Rubens UI. npm forwards positional arguments and flags after `--`, for
-example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-open`.
+`--dev` for the local Rubens UI. npm forwards positional arguments, and flags after `--`, for
+example `npm start -- --no-open` or
+`npm run dev azure:gpt-6-astra "$AZURE_GPT_KEY" -- --cache-breakpoint --no-open`. The launcher
+reads its arguments with `parseArgs` of `node:util`; an unknown flag exits with 1 and the usage.
 
 ### Arguments
 
 | Argument | Effect |
 | -------- | ------ |
-| `<model> <api-key>` | Also serve the model of the page's chat and open the page with the chat window. The model is `openai:<model-id>`, a name of `MODEL_ALIASES`, a deployment of `FOUNDRY_DEPLOYMENTS` or a `gpt-*`, `mistral-*`, `claude-*`, `gemini-*` model id; an unknown model or a missing key exits with 1 |
+| `<provider>:<model-id> <api-key>` | Also serve the model of the page's chat and open the page with the chat window. `<provider>` is one of `PROVIDERS` (the providers of the embedding-lib), `<model-id>` the exact model id at it — the text after the first colon, unchanged. A model without a known provider or id, `openai-compatible` without `--base-url`, and a missing key exit with 1 before the server starts |
+| `--base-url <url>` | `baseUrl` of the config; an `azure` model without it gets `FOUNDRY_BASE_URL`, the HI Azure AI Foundry resource |
+| `--reasoning-effort <effort>` | `reasoningEffort` of the config |
+| `--chat-completions` | `chatCompletions: true` |
+| `--cache-breakpoint` | `referenceCacheBreakpoint: true` |
 | `--dev` | The planner loads from `http://localhost:5173/` (`EXAMPLE_SERVER_URL` overrides) |
 | `--no-open` | Do not open the browser |
 
@@ -22,27 +28,15 @@ example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-open`
 | -------- | ------- | ------ |
 | `EXAMPLE_PORT` | 3000 | page port |
 | `EXAMPLE_SERVER_URL` | — | the planner's Rubens UI, passed as `server_url` |
-| `HI_CHAT_MODEL` | — | replaces the model of every provider other than the Foundry deployments and explicit `openai:<model-id>` requests (an Azure deployment name for `azure`) |
-| `AZURE_RESOURCE_NAME` | — | required for `azure` / `openai`: the resource of that deployment |
-| `HI_CHAT_REASONING_EFFORT` | per deployment | the reasoning effort of an Azure model on the Responses API |
 
 ### What it does
 
-1. **Model:** `planningAssistantConfig` turns the model name and the key into the
+1. **Model:** `planningAssistantConfig` turns the model, the key and the options into the
    `PlanningAssistantConfig` of the embedding-lib — `{ provider, model, apiKey, baseUrl?,
-   chatCompletions?, reasoningEffort?, referenceCacheBreakpoint?, readsImages }`. Every `gpt-*` id and the names of
-   `FOUNDRY_DEPLOYMENTS` are Azure deployments on the HI Foundry resource (`FOUNDRY_BASE_URL`), or
-   on the resource their entry names (`gpt-6.1-sol`); `mistral-large-3` uses Chat Completions;
-   gpt-5-mini and gpt-5.4-mini get the reasoning effort `high`. The aliases map to Mistral,
-   Anthropic, Google and an Azure deployment on `AZURE_RESOURCE_NAME`, whose base URL is the one the
-   AI SDK builds from a resource name. `readsImages` holds for every Anthropic and Google model,
-   every `gpt-*` deployment on a Foundry resource and the ids of `IMAGE_INPUT_MODELS`.
-   The two configured GPT-6 deployments opt in to `referenceCacheBreakpoint`; other deployment
-   names do not inherit that capability. It requires an embedding-lib that supports the option.
-   `openai:<model-id>` selects provider `openai` before alias/deployment matching and preserves
-   the complete suffix. It passes the supplied key, enables image input and uses the embedding-lib's
-   OpenAI Responses adapter. Azure variables and `HI_CHAT_MODEL` cannot redirect that request.
-   An empty suffix exits with the `openai:<model-id>` usage message.
+   chatCompletions?, reasoningEffort?, referenceCacheBreakpoint?, readsImages }`. It maps no
+   names and knows no deployment: which options a model needs is the caller's knowledge — the
+   `models` of the test JSONs carry them. `readsImages` is `true` for every model.
+   `referenceCacheBreakpoint` requires an embedding-lib that supports the option.
 2. **Static server** for `minimal-hi-example/` (`/` → `index.html`; only `.html`, `.js`, `.md`, `.json`).
 3. **Config:** `/planning-assistant-config.json` answers the config as JSON with
    `Cache-Control: no-store`, to a request from this machine only (`127.0.0.1`, `::1`) under a
@@ -54,20 +48,29 @@ example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-open`
    `chat=true` with a model and `server_url`.
 
 SIGINT and SIGTERM end the launcher with 0, and the page server stops with it.
-`minimal-hi-example/tests/start.test.js` checks the config of a model, the 404 without one,
-the 403 for a foreign Host, and that the page port can be bound again after signalling only the launcher PID (POSIX).
+`minimal-hi-example/tests/start.test.js` checks the exact model id of a provider in start and dev
+mode, the rejected models (no provider, an unknown provider, an empty id, `openai-compatible`
+without a base URL, no key, an unknown flag), the config of a model with its options, the 404
+without one, the 403 for a foreign Host, and that the page port can be bound again after signalling
+only the launcher PID (POSIX).
 
 ## The chat of the example page
 
 `index.html` imports `@roomle/embedding-lib` and its `hi.js` from jsDelivr's npm CDN, pinned to the dev version
-`0.0.0-dev-5e54d0f`
-([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)). With `?chat=true`
-the page sets `featureFlags.planningAssistant` in the planner options, and `startChat`:
+`0.0.0-dev-4c2797a`
+([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)). With `?chat=true`,
+or with the model proxy of the HI server — `modelProxy`: `/backends/list` answers exactly one
+backend and its `enableAIPlanning` is `true`, since the proxy serves only a user of exactly one
+backend — the page sets `featureFlags.planningAssistant` in the planner options, and `startChat`:
 
 1. leaves the chat off, with a line in the debug log, when the planner has no
    `planningAssistantOutput` (no AI Planning Assistant window);
-2. fetches `/planning-assistant-config.json` from the launcher; without it, it reports the window
-   unavailable with the message to start the example with a model;
+2. fetches `/planning-assistant-config.json` from the launcher; without it, it takes
+   `MODEL_PROXY_CONFIG` with `modelProxy` — the provider `openai-compatible`, the base URL
+   `<HI server>/api/ai/v1`, the model name `planning`, the Basic authorization of the page as the
+   header `Authorization`, no key — and otherwise reports the window unavailable with the message
+   to start the example with `npm start <provider>:<model-id> <api-key>`. The page's user `test`
+   has several backends, so the example has no chat without a model;
 3. calls `startPlanningAssistant(recordedPlannerApi(roomDesignerApi), config, signal)` of the
    embedding-lib, which loads the AI SDK and the provider from esm.sh, requests the prompts of the
    planner (`getExternalObjectAgentPrompts()`), creates the HI MCP tools from the tools the planner
@@ -126,8 +129,9 @@ its measured preload semantics and is retained as evidence of the rejected attem
 - **The prompts come from the planner:** the planning assistant requests
   `getExternalObjectAgentPrompts()`; a change of a prompt is a change in roomle-ui
   `hi-agent-prompts.ts`.
-- **The model names are the launcher's.** A new model or deployment is an entry in `start.mjs`
-  (`FOUNDRY_DEPLOYMENTS`, `MODEL_ALIASES`, `IMAGE_INPUT_MODELS`).
+- **The launcher maps no model names.** A new model or deployment needs no change: it is
+  `<provider>:<model-id>` with its options on the command line and in the test JSONs. A new
+  provider of the embedding-lib is an entry in `PROVIDERS` of `start.mjs`.
 - **The test scripts use page globals** — `window.instance`, `window.hiPosGroupsCompletelyLoaded`,
   `window.hiPlannerCalls`, `window.hiPlanningAssistantOutput`, `window.hiAgentPlanContext` and
   `window.hiPlanningAssistantAbort` (ends a turn that takes too long) of `index.html` ([Deployment and testing](./deployment-and-testing.md#end-to-end-runs)).

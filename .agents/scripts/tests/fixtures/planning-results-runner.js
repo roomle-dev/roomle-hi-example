@@ -9,7 +9,7 @@ const tests = suite.categories.flatMap((category) => category.tests);
 const runs = tests.map((test, index) => {
   const { planSnapshotId = null, errors = [], files = [] } = cases[test.id];
   const dir = join(
-    provider,
+    provider.replaceAll(':', '-'),
     `${String(index + 1).padStart(2, '0')}-${test.id}`
   );
   mkdirSync(join(out, dir), { recursive: true });

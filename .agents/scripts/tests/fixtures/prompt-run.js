@@ -10,7 +10,7 @@ const scenario = cases[calls.length];
 assert.ok(scenario, 'The suite launched more attempts than expected');
 const dir = process.argv[process.argv.indexOf('--out') + 1];
 const prompts = process.argv.slice(4, process.argv.indexOf('--plan'));
-calls.push({ dir, prompts });
+calls.push({ dir, prompts, args: process.argv.slice(2) });
 writeFileSync(process.env.TEST_PROMPT_CALLS, JSON.stringify(calls));
 const marker = `attempt-${calls.length}`;
 console.log(marker);

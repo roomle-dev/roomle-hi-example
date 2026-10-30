@@ -38,7 +38,7 @@ model/tool/planner delta tables, and the report-only layout with raw data and PD
 
 ## 1. The runs
 
-Existing runs: `.temp/result/<session>/<model>/<NN>-<test id>/`. A run is usable when its
+Existing runs: `.temp/result/<session>/<provider>-<model-id>/<NN>-<test id>/`. A run is usable when its
 `run.json.turns[].usage.diagnostics.version` is 1 for the current assistant's model-call,
 cache and request-byte measurements. The planning assistant logs one usage record per turn;
 the runner preserves it. Older `console.log` files with `[hi-chat] step` lines supply a legacy
@@ -56,7 +56,7 @@ the OpenAI series 01–05 is not continued. One session per repetition:
 ```bash
 SESSION=".temp/result/benchmark-$(date +%Y-%m-%d_%H-%M-%S)"
 mkdir -p "$SESSION"
-jq '.randomTests = 0 | .models = [{ "provider": "gpt-6-astra", "apiKey": "$AZURE_GPT_KEY" }]
+jq '.randomTests = 0 | .models |= map(select(.provider == "azure:gpt-6-astra"))
     | .categories |= map(.tests |= map(select(.id | IN("image-kitchen-left-wall", "image-only-no-text")))
       | select(.tests | length > 0))' \
   docs/test-prompts.json > "$SESSION/tests.json"

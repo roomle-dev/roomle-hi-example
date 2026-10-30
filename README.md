@@ -20,37 +20,35 @@ All possibilities for `npm start`:
 e.g.
 
 ```bash
-npm start "openai:<model-id>" "$OPENAI_ASSISTANT_API_KEY"
-npm run dev "openai:<model-id>" "$OPENAI_ASSISTANT_API_KEY"
+npm start azure:gpt-6-astra "$AZURE_GPT_KEY"
+npm start mistral:mistral-large-4 "$MI_API_USAGE_KEY"
 ```
 
 | Invocation | What you get |
 | ---------- | ------------ |
-| `npm start` | Example page on :3000, browser opens; no chat |
+| `npm start` | Example page on :3000, browser opens; the chat runs on the model proxy of the HI server when the backend of the page's user enables it, otherwise no chat |
 | `npm start -- --no-open` | Same, without opening the browser |
-| `npm start openai:<model-id> <api-key>` | Plus chat using OpenAI's API with the exact model ID after `openai:` and an OpenAI API key |
-| `npm start gpt-5-mini <api-key>` | Plus chat with the `gpt-5-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
-| `npm start gpt-5.4-mini <api-key>` | Plus chat with the `gpt-5.4-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
-| `npm start gpt-6-astra <api-key>` | Plus chat with the `gpt-6-astra` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
-| `npm start gpt-6.1-sol <api-key>` | Plus chat with the `gpt-6.1-sol` deployment on the Azure AI Foundry resource `controller-mes-resource`, with that resource's key |
-| `npm start gpt-<deployment> <api-key>` | Plus chat with any other `gpt-*` deployment of that name on the HI Azure AI Foundry resource |
-| `npm start mistral <api-key>` | Plus built-in AI chat with `mistral-large-latest` |
-| `npm start mistral-medium <api-key>` | Plus chat with `mistral-medium-latest` (also `mistral-large`, `mistral-large-4` for `mistral-large-4-0`, `mistral-large-3` for the `mistral-large-3` Foundry deployment, or any `mistral-*` model id) |
-| `npm start claude <api-key>` | Plus chat with `claude-sonnet-4-5` (also `anthropic`, `claude-sonnet`, `claude-opus`, or any `claude-*` model id) |
-| `npm start gemini <api-key>` | Plus chat with `gemini-2.5-pro` via the Gemini API, key from Google AI Studio (also `google`, `gemini-pro`, `gemini-flash` for `gemini-2.5-flash`, or any `gemini-*` model id) |
-| `npm start azure <api-key>` | Plus chat with Azure OpenAI (also `openai`; needs `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL=<deployment-name>`) |
+| `npm start <provider>:<model-id> <api-key>` | Plus chat with that model: `<provider>` is `azure`, `openai`, `mistral`, `anthropic`, `google` or `openai-compatible`, `<model-id>` the exact model id at it — no aliases |
+| `npm start azure:<deployment> <api-key>` | Plus chat with that deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`), e.g. `azure:gpt-6-astra`, `azure:gpt-5.4-mini` |
+| `npm start azure:gpt-6.1-sol <api-key> -- --base-url https://controller-mes-resource.services.ai.azure.com/openai/v1` | Plus chat with a deployment on another Foundry resource, with that resource's key |
+| `npm start openai:<model-id> <api-key>` | Plus chat using OpenAI's API with the exact model ID and an OpenAI API key |
+| `npm start mistral:mistral-large-4 <api-key>` | Plus chat with a model of the Mistral API |
+| `npm start anthropic:claude-sonnet-4-5 <api-key>` | Plus chat with a model of the Anthropic API |
+| `npm start google:gemini-2.5-pro <api-key>` | Plus chat with a model of the Gemini API, key from Google AI Studio |
 | `npm run dev <same arguments>` | Same as the matching `npm start` variant, but the planner loads from the local Rubens UI dev server (:5173) |
 | `EXAMPLE_SERVER_URL=<url> npm start <same arguments>` | Same as the matching `npm start` variant, but the planner loads from `<url>` (passed to the page as `server_url`) |
 
-The root `start` and `dev` scripts run the launcher directly. Put launcher flags after
-`--`, for example `npm run dev -- --no-open`. Model/key
-arguments can be combined with flags: `npm start -- mistral <api-key> --no-open`.
+The options of a model — `--base-url <url>`, `--reasoning-effort <effort>`,
+`--chat-completions`, `--cache-breakpoint` — are in the [AI chat](./docs/ai-chat.md#running-it)
+reference. The root `start` and `dev` scripts run the launcher directly. Put launcher flags after
+`--`, for example `npm run dev -- --no-open` or
+`npm start azure:gpt-5-mini "$AZURE_GPT_KEY" -- --reasoning-effort high --no-open`.
 
 Start the example and the chat against any Rubens UI, e.g. the local
 dev server:
 
 ```bash
-EXAMPLE_SERVER_URL=http://localhost:5173/ npm start gpt-5.4-mini "$AZURE_GPT_KEY"
+EXAMPLE_SERVER_URL=http://localhost:5173/ npm start azure:gpt-5.4-mini "$AZURE_GPT_KEY" -- --reasoning-effort high
 ```
 
 A roomle-ui PR preview (`https://test.roomle.com/t/cp/<pr>/`) reads from the test
@@ -58,7 +56,7 @@ database, where the example's plan does not exist. Add `customApiUrl` to point i
 the production API:
 
 ```bash
-EXAMPLE_SERVER_URL='https://test.roomle.com/t/cp/3087/?customApiUrl=https://www.roomle.com/api/v2' npm start gpt-5.4-mini "$AZURE_GPT_KEY"
+EXAMPLE_SERVER_URL='https://test.roomle.com/t/cp/3087/?customApiUrl=https://www.roomle.com/api/v2' npm start azure:gpt-5.4-mini "$AZURE_GPT_KEY" -- --reasoning-effort high
 ```
 
 Details: [AI chat](./docs/ai-chat.md) ·

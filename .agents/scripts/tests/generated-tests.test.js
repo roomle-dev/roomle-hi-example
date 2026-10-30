@@ -46,7 +46,7 @@ const fixture = async (t, { randomCount = 5 } = {}) => {
   const caseFile = join(root, 'cases.json');
   const out = join(root, 'results');
   const base = {
-    models: [{ provider: 'mock', apiKey: 'unused' }],
+    models: [{ provider: 'mock:model', apiKey: 'unused' }],
     plans: Object.fromEntries(
       random.map((item, i) => [item.plan, `ps_fixture_${i + 1}`])
     ),

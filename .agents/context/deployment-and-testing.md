@@ -44,11 +44,13 @@ page — the planning assistant and the HI MCP tools of the embedding-lib — an
 ### One run — `run-hi-mcp-prompt.js`
 
 ```bash
-node .agents/scripts/run-hi-mcp-prompt.js <model> <api-key> "<prompt>" ["<prompt>" …] \
-  [--plan <ps_id>] [--image <file>] [--out <dir>] [--dev] [--headed]
+node .agents/scripts/run-hi-mcp-prompt.js <provider>:<model-id> <api-key> "<prompt>" ["<prompt>" …] \
+  [--plan <ps_id>] [--image <file>] [--out <dir>] [--dev] [--headed] \
+  [--base-url <url>] [--reasoning-effort <effort>] [--chat-completions] [--cache-breakpoint]
 ```
 
-1. Starts the launcher with the model, the key and `--no-open`, and parses its `Example:` line.
+1. Starts the launcher with the model, the key, the model options and `--no-open`, and parses its
+   `Example:` line.
 2. Opens the example page in headless Chromium (`--enable-gpu`: the software renderer draws the
    object-only image empty) with the plan, and waits until the library context of the planner
    (`getExternalObjectLibraryContext`) has articles.
@@ -66,7 +68,7 @@ node .agents/scripts/run-hi-mcp-prompt.js <model> <api-key> "<prompt>" ["<prompt
    (`window.instance.extended`): images, plan XML, order data, and a saved plan snapshot id. The
    tool calls the planner ran during the chat come from `window.hiPlannerCalls`.
 
-Output in `--out` or `.temp/result/<time>-<model>/`: `run.json` (turns, answers, tool calls,
+Output in `--out` or `.temp/result/<time>-<provider>-<model-id>/`: `run.json` (turns, answers, tool calls,
 the [times of the turns](#planning-time), errors, the snapshot id, `snapshotCaptured` and
 `navigations`), the plan context, the planner calls,
 the images, the plan XML and the order data. Exit code 1 on an error or without a snapshot id.

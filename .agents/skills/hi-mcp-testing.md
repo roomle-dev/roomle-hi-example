@@ -22,10 +22,10 @@ images; a test that needs a changed plan asks for the change in an earlier turn.
 
 ### 1. Model
 
-`gpt-5-mini` with `$AZURE_GPT_KEY`, unless the user names other models — the `models` of
-`docs/test-prompts.json`, or another provider name (see
-[ai-chat.md](../../docs/ai-chat.md)) with its key variable: `mistral*` →
-`MI_API_USAGE_KEY`, `gpt-5*` / `gpt-6*` → `AZURE_GPT_KEY`. When the key variable is empty, stop and
+`azure:gpt-5-mini` with its entry of `docs/test-prompts.json` (`$AZURE_GPT_KEY` and its options),
+unless the user names other models — the `models` of `docs/test-prompts.json`, each with its entry,
+or another model `<provider>:<model-id>` (see [ai-chat.md](../../docs/ai-chat.md#running-it)) with
+its key variable and options: `mistral:*` → `MI_API_USAGE_KEY`, `azure:*` → `AZURE_GPT_KEY`. When the key variable is empty, stop and
 ask the user for the key. Never write a key into a file. "with the local planner" / "with --dev"
 adds `--dev` to the runner (the roomle-ui dev server must run on :5173).
 
@@ -42,10 +42,11 @@ When continuing an existing session, reuse its prepared `tests.json` and go stra
 [Run](#4-run). Do not copy the source file again or generate another set of cases.
 
 Write the temporary test file `$SESSION/tests.json`: `docs/test-prompts.json` with only the chosen
-models — by default every test and the `gpt-5-mini` model:
+models — by default every test and the `azure:gpt-5-mini` model with its entry of the file (its
+key and options):
 
 ```bash
-jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/test-prompts.json > "$SESSION/tests.json"
+jq '.models |= map(select(.provider == "azure:gpt-5-mini"))' docs/test-prompts.json > "$SESSION/tests.json"
 ```
 
 #### The minimum set
@@ -55,7 +56,7 @@ When the user asks to run the tests with the minimum set, the source is
 `docs/test-prompts.json` in every command of this step:
 
 ```bash
-jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/minimum-test-prompts.json > "$SESSION/tests.json"
+jq '.models |= map(select(.provider == "azure:gpt-5-mini"))' docs/minimum-test-prompts.json > "$SESSION/tests.json"
 ```
 
 It is a subset of the tests in the same format, with `randomTests` 0 — no random tests unless the
@@ -75,17 +76,9 @@ file. A category keeps at least one test, so a filter drops the categories it em
   `| .categories |= map(.tests |= map(select(.id | IN("edit-delete-group", "kitchen-conversation"))) | select(.tests | length > 0))`.
 - A run limited to named tests keeps that scope: generate no extra cases unless the user asks
   for them. Set the session's `randomTests` to 0 in that case.
-- Tests with an `image` stay only for models that read images. The launcher decides that for
-  the model the name resolves to: `readsImages` of `planningAssistantConfig` in
-  [start.mjs](../../minimal-hi-example/start.mjs).
-  - Every alias of the launcher reads images: `claude`, `anthropic`, `gemini`, `gemini-pro`,
-    `gemini-flash`, `google`, `mistral`, `mistral-large`, `mistral-medium`, `mistral-large-3`,
-    `mistral-large-4`, `azure`, `openai`, and
-    every `gpt-*` deployment, e.g. `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, `gpt-6.1-sol`; so
-    does every full `claude-*` and `gemini-*` id.
-  - A full `mistral-*` id, or an Azure deployment named by `HI_CHAT_MODEL`, reads images only if it
-    is in `IMAGE_INPUT_MODELS`.
-  - A running launcher answers the config at `/planning-assistant-config.json`, with `readsImages`.
+- Tests with an `image` stay only for models that read images. The launcher sets `readsImages`
+  for every model, so whether a model reads images is the knowledge of its provider: the models of
+  `docs/test-prompts.json` all do.
   - For a model without images, leave the image tests out of the file
     (`| .categories |= map(.tests |= map(select(.image | not)) | select(.tests | length > 0))`) and
     list them in the report as skipped.
@@ -217,12 +210,13 @@ node .agents/scripts/run-hi-mcp-tests.js "$SESSION/tests.json" --out "$SESSION" 
   After three attempts the runner retains the third result, including a failure. A result with no
   `run.json` is listed as "no run.json"; the report lists it as not run with its console log.
 
-A run's directory is `$SESSION/<model>/<NN>-<test id>/`: `<model>` is the provider name, `<NN>` the
+A run's directory is `$SESSION/<model dir>/<NN>-<test id>/`: `<model dir>` is the model with its
+colon replaced by `-` (`azure-gpt-5-mini` for `azure:gpt-5-mini`), `<NN>` the
 test's position in the file, counted across the categories.
 
 ### 5. Evaluate
 
-Per run (`R` = `$SESSION/<model>/<NN>-<test id>`), read the test in `tests.json` (`plan`,
+Per run (`R` = `$SESSION/<model dir>/<NN>-<test id>`), read the test in `tests.json` (`plan`,
 `prompt`, `image`, `expect`) and:
 
 | File | Look at |
@@ -340,8 +334,8 @@ placement, plan space — so compare them with the model's placement directly. S
 Write `$SESSION/report.md`. With more than one model: one header row and one summary table per
 model, and the run sections grouped by model (`## <model> — 01 <title>`); the image paths start with
 the model's directory, and every link to a run section names the model: `#<model>--01-<title-slug>`,
-the anchor GitHub and `render-report-pdf.js` make of that heading (a dot of the model is dropped:
-`gpt-5.4-mini` → `#gpt-54-mini--01-…`).
+the anchor GitHub and `render-report-pdf.js` make of that heading (the colon and a dot of the model
+are dropped: `azure:gpt-5.4-mini` → `#azuregpt-54-mini--01-…`).
 
 A session has **exactly one report**, `report.md`, and one PDF of it ([below](#the-pdf)). Never write a report per model or a partial
 report file beside it — not even when the evaluation is split, e.g. one subagent per model: their
@@ -368,7 +362,7 @@ node .agents/scripts/build-test-report.js "$SESSION" # reads facts.json and eval
 
 | Field | Content |
 |---|---|
-| `runs` | per run, keyed `<model>\|<NN>` (`gpt-6.1-sol\|01`): `verdict`, `bug`, `bugText`, `doors`, `evaluation` |
+| `runs` | per run, keyed `<model>\|<NN>` (`azure:gpt-6.1-sol\|01`): `verdict`, `bug`, `bugText`, `doors`, `evaluation` |
 | `header.planner` | the planner cell of the header row |
 | `header.reasoningEffort` | optional, per model; its presence adds the Reasoning effort column |
 | `frontSections` | the sections between the random tests and the run sections, in order, `{ heading, body }`; a body links a run as `[[01]]`, with more than one model as `[[gpt-5-mini 01]]` |
@@ -399,7 +393,7 @@ Only when the user explicitly asks to add a recommended case, copy it into its c
   ```
 
 - Link a source image as `[images/<file>](images/<file>)`, never as `docs/images/<file>`.
-- The run images stay in the run directories (`<model>/<NN>-<test id>/…`), the image the model got
+- The run images stay in the run directories (`<model dir>/<NN>-<test id>/…`), the image the model got
   included (`prompt-image.jpg`).
 
 ````markdown
@@ -407,7 +401,7 @@ Only when the user explicitly asks to add a recommended case, copy it into its c
 
 | Model | Planner | Tests | Pass | Partial | Fail | Bugs |
 |---|---|---|---|---|---|---|
-| gpt-5-mini | bo-test | 40 run (35 fixed, 5 random), 0 skipped | … | … | … | … |
+| azure:gpt-5-mini | bo-test | 40 run (35 fixed, 5 random), 0 skipped | … | … | … | … |
 
 ## Summary
 
@@ -463,7 +457,7 @@ Plan: <plan name>
 
 | Perspective | Perspective object | Top |
 |---|---|---|
-| <img src="gpt-5-mini/01-<test id>/perspective-image.png" width="280"> | <img src="gpt-5-mini/01-<test id>/perspective-object-image.png" width="280"> | <img src="gpt-5-mini/01-<test id>/top-image.png" width="280"> |
+| <img src="azure-gpt-5-mini/01-<test id>/perspective-image.png" width="280"> | <img src="azure-gpt-5-mini/01-<test id>/perspective-object-image.png" width="280"> | <img src="azure-gpt-5-mini/01-<test id>/top-image.png" width="280"> |
 
 **Evaluation — <verdict>**: <what is in the plan against what was asked, with the evidence>
 
@@ -478,7 +472,7 @@ Plan: <plan name>
 
 | Image | Perspective | Perspective object | Top |
 |---|---|---|---|
-| <img src="gpt-5-mini/28-<test id>/prompt-image.jpg" width="210"> | <img src="gpt-5-mini/28-<test id>/perspective-image.png" width="210"> | <img src="gpt-5-mini/28-<test id>/perspective-object-image.png" width="210"> | <img src="gpt-5-mini/28-<test id>/top-image.png" width="210"> |
+| <img src="azure-gpt-5-mini/28-<test id>/prompt-image.jpg" width="210"> | <img src="azure-gpt-5-mini/28-<test id>/perspective-image.png" width="210"> | <img src="azure-gpt-5-mini/28-<test id>/perspective-object-image.png" width="210"> | <img src="azure-gpt-5-mini/28-<test id>/top-image.png" width="210"> |
 
 …
 
@@ -547,11 +541,11 @@ node .agents/scripts/render-report-pdf.js "$SESSION/report.md" --out ".temp/repo
 
 - `<date>` is the date of the session directory: `2026-10-16` of `mcp-test-2026-10-16_11-57-20`.
 - `<models>` are the model directories of the session in the order of the summary table, joined by
-  `_`: `mcp-test-2026-10-08_gpt-5-mini_gpt-5.4-mini_gpt-6-astra.pdf`.
+  `_`: `mcp-test-2026-10-08_azure-gpt-5-mini_azure-gpt-5.4-mini_azure-gpt-6-astra.pdf`.
 - A second session of the same date and models adds the time of its directory after the date:
-  `mcp-test-2026-10-16_11-57-20_gpt-6-astra.pdf`.
+  `mcp-test-2026-10-16_11-57-20_azure-gpt-6-astra.pdf`.
 - A session of the [minimum set](#the-minimum-set) adds `minimum-` before the date:
-  `mcp-test-minimum-2026-10-22_gpt-5-mini.pdf`.
+  `mcp-test-minimum-2026-10-22_azure-gpt-5-mini.pdf`.
 
 The session directory keeps no PDF. The PDF is A4, every run section on a new page, the links of the summary
 jumping to the run sections, the images embedded at most 640 px wide (about 3 MB for 32 runs, against
@@ -591,18 +585,18 @@ node .agents/scripts/run-hi-mcp-tests.js [<tests.json>] [--out <dir>] [--dev]
 
 | Argument | Meaning |
 |---|---|
-| `<tests.json>` | the test file, default [docs/test-prompts.json](../../docs/test-prompts.json) — `models` (`{ provider, apiKey }`, `"$NAME"` for the key in the environment variable `NAME`), `plans` (name → plan snapshot id), `categories` (`{ category, tests }`, the tests `{ id, title, plan, prompt?, image?, expect?, random? }` in the order they run, `prompt` a text or a list of turns), `randomTests` (how many random tests [step 3](#random-tests) adds), `promptSuffix` (the text appended to the first prompt of every test, so that the agent decides open details itself instead of asking), `testSet` (the name of a subset of the tests, `"minimum"` in [minimum-test-prompts.json](../../docs/minimum-test-prompts.json); only the report reads it); the format is in [test-prompts.md](../../docs/test-prompts.md#test-cases) |
+| `<tests.json>` | the test file, default [docs/test-prompts.json](../../docs/test-prompts.json) — `models` (`{ provider, apiKey, baseUrl?, reasoningEffort?, chatCompletions?, cacheBreakpoint? }`: `provider` is `<provider>:<model-id>`, `"$NAME"` for the key in the environment variable `NAME`, the options are those of the launcher), `plans` (name → plan snapshot id), `categories` (`{ category, tests }`, the tests `{ id, title, plan, prompt?, image?, expect?, random? }` in the order they run, `prompt` a text or a list of turns), `randomTests` (how many random tests [step 3](#random-tests) adds), `promptSuffix` (the text appended to the first prompt of every test, so that the agent decides open details itself instead of asking), `testSet` (the name of a subset of the tests, `"minimum"` in [minimum-test-prompts.json](../../docs/minimum-test-prompts.json); only the report reads it); the format is in [test-prompts.md](../../docs/test-prompts.md#test-cases) |
 | `--out <dir>` | the session directory, default `.temp/result/mcp-test-<local time>/`; an existing one is continued |
 | `--dev` | passed to every run |
 
 The runner:
 
-1. checks the file before the first run — every model has a key (a `"$NAME"` variable is set), every category
+1. checks the file before the first run — every model has a key (a `"$NAME"` variable is set), every model is `<provider>:<model-id>`, every category
    has a unique name and at least one test, every test has a unique kebab-case `id`, a `plan` of `plans`, a prompt (a text or a list of texts) or an image and an existing
    image file; an explicit `randomTests` is a whole number from 0 to the number of plans, an
    explicit `promptSuffix` a non-empty text — and names every problem;
-2. runs, for every model and then every test, `run-hi-mcp-prompt.js <provider> "<apiKey>"
-   "<prompt>" ["<prompt>" …] --plan <id> [--image <file>] --out <out>/<provider>/<NN>-<id>`
+2. runs, for every model and then every test, `run-hi-mcp-prompt.js <provider>:<model-id> "<apiKey>"
+   "<prompt>" ["<prompt>" …] --plan <id> [--image <file>] [<model options>] --out <out>/<provider>-<model-id>/<NN>-<id>`
    (one `"<prompt>"` per turn of a `prompt` list, the `promptSuffix` appended to the first one —
    after a `.` when it ends without `.`, `!` or `?`; a test without a prompt sends its image alone,
    with an empty prompt and no suffix),
@@ -625,23 +619,24 @@ or the planning assistant takes effect only with the embedding-lib version the p
 ## Run a prompt (the script)
 
 ```bash
-node .agents/scripts/run-hi-mcp-prompt.js <model> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed]
+node .agents/scripts/run-hi-mcp-prompt.js <provider>:<model-id> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed] [--base-url <url>] [--reasoning-effort <effort>] [--chat-completions] [--cache-breakpoint]
 ```
 
 | Argument | Meaning |
 |---|---|
-| `<model>` | a model name of the launcher, passed through unchanged (`gpt-5.4-mini`, `mistral`, `claude`, … — see [ai-chat.md](../../docs/ai-chat.md)); `provider` in `run.json` and the test file |
+| `<provider>:<model-id>` | the model as the launcher takes it, passed through unchanged (`azure:gpt-5.4-mini`, `mistral:mistral-large-4`, … — see [ai-chat.md](../../docs/ai-chat.md#running-it)); `provider` in `run.json` and the test file |
 | `<api-key>` | the provider's API key, e.g. `"$AZURE_GPT_KEY"` |
 | `"<prompt>" …` | the user messages: consecutive turns of one conversation (the history goes along, as in the chat window); a turn with an error ends it. `""` with `--image` sends the image alone — the planning assistant gives it the image prompt of the planner, which names the skill `image-planning` |
 | `--plan <id>` | the plan snapshot the page starts from (`id` of the example URL), its HI groups included; without it, the page's default plan |
 | `--image <file>` | an image (PNG, JPEG, WebP, GIF) that goes along with the last prompt, as an image dropped into the chat window: redrawn as JPEG with a long side of at most 1568 px. Only for a model that reads images: the planning assistant passes the image on without checking |
-| `--out <dir>` | the result directory (default `.temp/result/<UTC timestamp>-<provider>/`) |
+| `--out <dir>` | the result directory (default `.temp/result/<UTC timestamp>-<provider>-<model-id>/`) |
+| `--base-url`, `--reasoning-effort`, `--chat-completions`, `--cache-breakpoint` | the options of the model, passed to the launcher ([ai-chat.md](../../docs/ai-chat.md#running-it)) |
 | `--dev` | the planner from the local Rubens UI dev server (`npm run dev` in roomle-ui, :5173) |
 | `--headed` | shows the browser window |
 
 The script:
 
-1. starts the launcher (`minimal-hi-example/start.mjs <model> <api-key> --no-open`), which serves the
+1. starts the launcher (`minimal-hi-example/start.mjs <provider>:<model-id> <api-key> --no-open` with the model options), which serves the
    page and the model of its chat (port 3000, or `EXAMPLE_PORT`);
 2. opens the example URL the launcher prints, with `id` of `--plan`, in Playwright Chromium, a
    fresh browser each run, so every run starts from its plan (no IndexedDB state);

@@ -41,9 +41,10 @@ Preserve the requested test, model/provider, key variable, planner URL and reaso
 Do not substitute one for the other. Keep credentials in the environment and put only variable
 references such as `$AZURE_GPT_KEY` in session files.
 
-**The provider of every benchmark from 06 on is the Azure deployment:** `gpt-6-astra` with the key
-`$AZURE_GPT_KEY` — in the runner's tests file `{ "provider": "gpt-6-astra", "apiKey": "$AZURE_GPT_KEY" }`,
-on the command line `gpt-6-astra "$AZURE_GPT_KEY"`. Benchmarks 01–05 ran on direct OpenAI
+**The provider of every benchmark from 06 on is the Azure deployment:** `azure:gpt-6-astra` with the
+key `$AZURE_GPT_KEY` and the cache breakpoint — in the runner's tests file its entry of
+`docs/test-prompts.json`, `{ "provider": "azure:gpt-6-astra", "apiKey": "$AZURE_GPT_KEY", "cacheBreakpoint": true }`,
+on the command line `azure:gpt-6-astra "$AZURE_GPT_KEY" --cache-breakpoint`. Benchmarks 01–05 ran on direct OpenAI
 (`openai:gpt-6-astra`, `$OPENAI_ASSISTANT_API_KEY`) and are not continued: compare their turns with
 the Azure series for the shape of a turn, not for the seconds.
 

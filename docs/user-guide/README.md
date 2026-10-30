@@ -100,13 +100,15 @@ In the repository folder:
 
 ```bash
 npm install
-npm start gpt-5.4-mini <api-key>
+npm start azure:gpt-5.4-mini <api-key>
 ```
 
 The browser opens `http://localhost:3000` with the planner; the button at the bottom opens the chat.
-Instead of `gpt-5.4-mini` you can start other models — `mistral`, `claude`, `gemini`,
-`gpt-5-mini`, `gpt-6-astra` and more; the [README](../../README.md#usage) lists them all. Without a
-model (`npm start`) the page opens without a chat. The chat runs in the page.
+Instead of `azure:gpt-5.4-mini` you can start any model as `<provider>:<model-id>` with the exact
+model id — `azure:gpt-6-astra`, `mistral:mistral-large-4`, `anthropic:claude-sonnet-4-5` and more;
+the [README](../../README.md#usage) lists the providers. Without a model (`npm start`) the chat runs
+on the model proxy of the HI server when your backend enables it; otherwise the page opens without
+a chat. The chat runs in the page.
 
 ### 3. The sign-in example
 

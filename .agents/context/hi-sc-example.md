@@ -8,19 +8,26 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 
 1. **Sign-in view** (`index.html`): a form over the background image
    `src/assets/say-hi-to-homag-intelligence.jpg` with the user and password of the HI server, the
-   backend ID and library (prefilled `HI_PRE_Roomle_Milestone_2`, `Furniture_Smith`), and the
-   optional model and API key of the chat. The model field suggests the common model names
-   (`<datalist>`).
+   backend ID and library, and the optional provider, model and API key of the chat. Every field
+   starts blank; the provider is a selection of the providers of the embedding-lib. `main.ts` fills
+   the fields from the sign-in cookie, then from the query parameter of each field's `name`
+   (`user`, `password`, `backendId`, `libraryId`, `provider`, `model`, `apiKey`), so a query
+   parameter overwrites the cookie; other parameters are ignored, and a provider that is not in the
+   selection leaves it blank.
 2. **Start planning** (`main.ts`, `readSettings`):
-   - a model or an API key → `planningAssistantConfig` (`model-config.ts`); the one without the
-     other, or an unknown model, is an error on the form;
+   - a provider, model or API key → `planningAssistantConfig` (`model-config.ts`); one of them
+     without the others is an error on the form;
    - the user and password → the Basic authorization; `fetchBackend` (`hi-server.ts`) reads
      `GET <HI server>/backends/list` with it. 401 is "Wrong user or password", a backend ID that is
      not in the list is an error, and the backend's `planId`, `additionalCatalogs` and
      `configureInRoom` go to the planner;
-   - the page swaps the sign-in view for the planner view, without a reload. The password and the
-     API key stay in memory; nothing goes into the URL or the browser storage, so a reload returns
-     to the sign-in;
+   - after the sign-in is accepted and while no sign-in cookie exists, the dialog `#cookie-consent`
+     asks to store the sign-in data ("Only the essential login data is stored"). **Allow** writes
+     all seven fields to the cookie `hi-sc-sign-in` (`fields-cookie.ts`: JSON, one year,
+     `SameSite=Strict`, path `/`); **Decline** or Escape stores nothing, and the next sign-in asks
+     again. With the cookie, every sign-in rewrites it without asking;
+   - the page swaps the sign-in view for the planner view, without a reload. The page writes
+     nothing to the URL, so a reload returns to the sign-in;
    - an error while the planner starts returns to the sign-in view with the message.
 3. **Planner** (`planner.ts`, `startPlanner`): `setupHi` with the HI proxy of the backend
    (`proxy_request?backendId=…`) and the Basic authorization — `setupHi` loads the article catalog,
@@ -29,13 +36,15 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 
 | File | Responsibility |
 | ---- | -------------- |
-| `hi-sc-example/index.html` | the two views: the sign-in form, the planner container |
-| `hi-sc-example/src/main.ts` | the form: reads the settings, signs in, swaps the views |
+| `hi-sc-example/index.html` | the two views: the sign-in form with the cookie dialog, the planner container |
+| `hi-sc-example/src/main.ts` | the form: prefills it, reads the settings, signs in, asks for the cookie, swaps the views |
+| `hi-sc-example/src/fields-cookie.ts` | `storedFields`, `fieldsCookie`: the sign-in fields in the cookie |
 | `hi-sc-example/src/hi-server.ts` | the HI server URL, `fetchBackend` |
-| `hi-sc-example/src/model-config.ts` | `planningAssistantConfig`: a model name and its key → the `PlanningAssistantConfig` of the embedding-lib |
+| `hi-sc-example/src/model-config.ts` | `planningAssistantConfig`: provider, model ID and key → the `PlanningAssistantConfig` of the embedding-lib |
 | `hi-sc-example/src/planner.ts` | `startPlanner`: HI setup, planner, planning assistant |
 | `hi-sc-example/src/style.css` | the sign-in page; the planner fills the window |
 | `hi-sc-example/tests/model-config.test.ts` | the unit tests of `planningAssistantConfig` |
+| `hi-sc-example/tests/fields-cookie.test.ts` | the unit tests of the sign-in cookie |
 
 ## The planner options
 
@@ -52,20 +61,16 @@ the server URL `https://www.roomle.com/t/bo-test/`, the catalog root tags, the
   the `dragIn` plugin, `saveToIdb`, and the page globals of the test scripts (`window.instance`,
   `window.hiPlannerCalls`, …). The end-to-end test scripts run against the minimal example only.
 
-## The model names
+## The chat model
 
-`model-config.ts` takes the model names of `npm start <model>` and builds the same configs as
-`planningAssistantConfig` of `minimal-hi-example/start.mjs`, without environment variables:
+`model-config.ts` passes the provider (`anthropic`, `azure`, `google`, `mistral`, `openai`), the
+model ID and the API key to the embedding-lib unchanged — no aliases, no mapping:
 
-- `openai:<model-id>` — OpenAI, the model ID passed through unchanged;
-- every `gpt-*` and `mistral-large-3` — a deployment on the HI Azure AI Foundry resource,
-  `gpt-6.1-sol` on its own resource, with the deployment settings of `FOUNDRY_DEPLOYMENTS`;
-- the aliases `mistral`, `mistral-medium`, `mistral-large-4`, `claude`, `claude-opus`, `gemini`,
-  `gemini-flash`, and every `mistral-*`, `claude-*`, `gemini-*` model ID passed through.
-
-The `azure` alias, `HI_CHAT_MODEL`, `AZURE_RESOURCE_NAME` and `HI_CHAT_REASONING_EFFORT` have no
-counterpart. A change of the Foundry deployments in `start.mjs` needs the same change in
-`model-config.ts`.
+- `azure` is a deployment on the HI Azure AI Foundry resource: the config carries its OpenAI v1
+  endpoint `https://dfhifoundrysweden.services.ai.azure.com/openai/v1` as `baseUrl`, which the
+  embedding-lib's `createAzure` needs, and the model ID is the deployment name. The deployment runs
+  on the Responses API with its own default reasoning effort.
+- `readsImages` is `true` for every model, so the chat window offers the image drop.
 
 ## Dependencies, build and tests
 
@@ -83,4 +88,5 @@ counterpart. A change of the Foundry deployments in `start.mjs` needs the same c
 
 | Test | Covers |
 | ---- | ------ |
-| `tests/model-config.test.ts` | Foundry deployments and their settings, `openai:` pass-through with its case, aliases and pass-through IDs, which Mistral models read images, an unknown model and a model without its key |
+| `tests/model-config.test.ts` | provider, model ID and key passed through unchanged, the Foundry endpoint of an `azure` model, a chat without its provider, model or key |
+| `tests/fields-cookie.test.ts` | the fields stored and read back with any characters, among other cookies; the cookie attributes; no fields without the cookie |

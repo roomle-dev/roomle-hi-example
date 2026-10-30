@@ -26,7 +26,8 @@ page and needs no dependency here. Node 20 or later. The sign-in example depends
 | File | Covers |
 | ---- | ------ |
 | `minimal-hi-example/tests/start.test.js` | starts the real launcher on unused ports, with a model and a dummy key and without a model: the planning assistant config of the model, `no-store`, the 404 without a model, the 403 for a foreign Host; SIGTERM/SIGINT to only the launcher PID release the page port (POSIX; no model request) |
-| `hi-sc-example/tests/model-config.test.ts` | the model names of the sign-in example → the `PlanningAssistantConfig` (`node --experimental-strip-types --test`) |
+| `hi-sc-example/tests/model-config.test.ts` | provider, model ID and key of the sign-in example → the `PlanningAssistantConfig` (`node --experimental-strip-types --test`) |
+| `hi-sc-example/tests/fields-cookie.test.ts` | the sign-in cookie of the sign-in example: the fields stored and read back, the cookie attributes |
 | `.agents/scripts/tests/*.test.js` | the test tooling (`node --test`) |
 
 The HI tools, their tool commands and the forwarding of the embedding-lib are tested in roomle-ui, see

@@ -1,8 +1,8 @@
 # Quickstart — HI Sign-in Example (TypeScript)
 
 The HI planner with its AI chat, in TypeScript, behind a sign-in page: you enter the user and
-password of the HI server, the backend ID and library, and optionally the model and API key of the
-chat. **Start planning** checks the sign-in and opens the planner with the HI library and the AI
+password of the HI server, the backend ID and library, and optionally the provider, model and API
+key of the chat. **Start planning** checks the sign-in and opens the planner with the HI library and the AI
 Planning Assistant, as the [minimal example](../minimal-hi-example/README.md) does. How it is built:
 [.agents/context/hi-sc-example.md](../.agents/context/hi-sc-example.md).
 
@@ -15,11 +15,30 @@ and opens the browser:
 npm run start:sc        # in the repository root; or `npm run dev` in hi-sc-example/
 ```
 
-**3. Sign in** with the user and password of the HI server. The backend ID and the library are
-prefilled with `HI_PRE_Roomle_Milestone_2` and `Furniture_Smith`. For the chat, enter a model and its
-API key; the model names are those of `npm start <model>` — `gpt-6-astra`, `gpt-5.4-mini`,
-`mistral-medium`, `claude`, `gemini`, `openai:<model-id>` and more
-([AI chat](../docs/ai-chat.md#running-it)). Without a model the planner opens without the chat.
+**3. Sign in** with the user and password of the HI server, the backend ID and the library. For the
+chat, select the provider — Anthropic, Azure, Google, Mistral or OpenAI — and enter the exact model ID
+at that provider and its API key. An Azure model is a deployment on the HI Azure AI Foundry
+resource, named by its deployment name. Without them the planner opens without the chat.
+
+Example login:
+
+| Field | Value |
+| ----- | ----- |
+| User | `test` |
+| Password | `6mABjMDnEq4tvaN` |
+| Backend ID | `HI_PRE_Roomle_Milestone_2` |
+| Library | `Furniture_Smith` |
+| Provider | Azure |
+| Model | `gpt-6-astra` |
+
+On the first sign-in a dialog asks to store the sign-in data in a cookie; with **Allow**, the
+fields are filled in from it on the next visit. Every field can also be prefilled by a query
+parameter of its name, which overwrites the cookie — `user`, `password`, `backendId`, `libraryId`,
+`provider`, `model`, `apiKey`:
+
+```text
+http://localhost:3300/?backendId=<backend-id>&libraryId=<library>&provider=azure&model=<deployment>
+```
 
 **4. Ask the agent** — the button at the bottom of the planner opens the chat.
 

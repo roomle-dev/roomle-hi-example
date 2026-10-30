@@ -119,8 +119,8 @@ npm run start:sc
 ```
 
 The browser opens `http://localhost:3300` with a sign-in page. Enter the user and password of the HI
-server, the backend ID and the library, and for the chat select the provider and enter the exact
-model ID and its API key. **Start planning** opens the planner; the button at the bottom opens the
+server, the library and, if your login has more than one backend, the backend ID, and for the chat
+select the provider and enter the exact model ID and its API key. **Start planning** opens the planner; the button at the bottom opens the
 chat. Without a model the planner opens without a chat. On the first sign-in the page asks whether
 it may store the sign-in data in a cookie; if you allow it, the form is filled in on your next
 visit. Each field can also be prefilled by a query parameter of its name, for example

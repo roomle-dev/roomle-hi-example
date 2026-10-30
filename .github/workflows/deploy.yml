@@ -3,30 +3,40 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - master
+      - release/pages
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Deploy with gh-pages
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git remote set-url origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-          npm run deploy --workspace hi-sc-example -- -u "github-actions-bot <support+actions@github.com>"
+      - name: Build the sign-in example
+        run: npm run build:pages --workspace hi-sc-example
+
+      - name: Upload the build
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: hi-sc-example/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

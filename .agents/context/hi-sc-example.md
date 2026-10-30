@@ -95,20 +95,18 @@ model ID and the API key to the embedding-lib unchanged — no aliases, no mappi
 
 ## GitHub Pages
 
-The page is published at <https://roomle-dev.github.io/roomle-hi-example/>, from the branch
-`gh-pages`.
+The page is published at <https://roomle-dev.github.io/roomle-hi-example/> by the workflow
+`.github/workflows/deploy.yml`, which runs on every push to the branch `release/pages` and builds from
+it:
 
-- **`npm run deploy`** (in the root or in `hi-sc-example/`): `predeploy` checks the types and builds
-  with the base `/roomle-hi-example/` (`vite build --base /roomle-hi-example/`), then `gh-pages -d dist`
-  pushes `dist/` to `gh-pages` of `origin` as a new commit. It pushes with the git credentials of
-  the machine.
-- **`.github/workflows/deploy.yml`** runs the same on every push to `master`: `npm ci`, then
-  `npm run deploy` with the workflow's `GITHUB_TOKEN` (`permissions: contents: write`) and the user
-  `github-actions-bot`.
-- **The `gh-pages` branch has to exist before the first deploy.** When it does not, `gh-pages`
-  clones `master`, makes an orphan branch of it and removes only the files without a leading dot:
-  `.agents/`, `.github/`, `.gitignore` and the other dot entries of `master` would stay on
-  `gh-pages`. An empty branch avoids that:
-  `git switch --orphan gh-pages && git commit --allow-empty -m "Create the gh-pages branch" && git push origin gh-pages`.
-- **Pages** serves the branch `gh-pages`, folder `/` (repository settings → Pages). The build has no
-  file with a leading `_`, which the Jekyll build of Pages would drop.
+1. `npm ci`, then `npm run build:pages --workspace hi-sc-example` — the type check and
+   `vite build --base /roomle-hi-example/`;
+2. `actions/upload-pages-artifact` uploads `hi-sc-example/dist`, `actions/deploy-pages` deploys it to
+   the environment `github-pages` (`permissions`: `pages: write`, `id-token: write`).
+
+To publish, push to `release/pages`, for example `git push origin master:release/pages`. No branch
+holds the build.
+
+The repository needs, once: Pages with the source **GitHub Actions** (settings → Pages), and
+`release/pages` among the deployment branches of the environment `github-pages` (settings →
+Environments), which allows only the default branch at first.

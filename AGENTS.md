@@ -476,7 +476,7 @@ npm start          # or: node minimal-hi-example/start.mjs
 This serves the example page `minimal-hi-example/index.html` on port 3000 and opens it;
 `npm start <model> <api-key>` adds the chat ([docs/ai-chat.md](./docs/ai-chat.md)), whose planning
 assistant runs the HI tools. `npm run start:sc` starts the sign-in example (`hi-sc-example/`) on
-port 3300; `npm run deploy` publishes it to GitHub Pages
+port 3300; a push to the branch `release/pages` publishes it to GitHub Pages
 (<https://roomle-dev.github.io/roomle-hi-example/>).
 
 ### The Tools

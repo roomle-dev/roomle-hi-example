@@ -51,4 +51,4 @@ http://localhost:3300/?backendId=<backend-id>&libraryId=<library>&provider=azure
 | `npm run preview` | serves the production build on :3300 |
 | `npm run typecheck` | `tsc` |
 | `npm test` | the unit tests (Node's test runner) |
-| `npm run deploy` | builds the page for GitHub Pages and publishes it to the `gh-pages` branch (also `npm run deploy` in the repository root) |
+| `npm run build:pages` | the production build for GitHub Pages (base `/roomle-hi-example/`); a push to the branch `release/pages` builds and publishes it |

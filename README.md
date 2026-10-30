@@ -74,8 +74,10 @@ on GitHub Pages: <https://roomle-dev.github.io/roomle-hi-example/>
 ```bash
 npm install
 npm run start:sc     # Vite dev server on :3300, opens the sign-in page
-npm run deploy       # publishes it to GitHub Pages
 ```
+
+A push to the branch `release/pages` publishes it to GitHub Pages
+(`.github/workflows/deploy.yml`).
 
 ## Ask the agent
 

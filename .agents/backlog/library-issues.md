@@ -62,6 +62,7 @@ library cannot calculate.
 | 12 | [A worktop on the tall units from the group's countertop switch](#12-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — a worktop on top of the tall units |
 | 15 | [The shelf descriptor names no format](#15-the-shelf-descriptor-names-no-format) | HOMAG Furniture_Smith | HOMAG library development team | the desc names the default spacing; the actual format and example open | low — the number of adjustable shelves cannot be set, so "one more shelf" is not possible with adjustable shelves |
 | 21 | [The sink descriptions: a value desc with its pasted table row, and what None builds](#21-the-sink-descriptions-a-value-desc-with-its-pasted-table-row-and-what-none-builds) | HOMAG Furniture_Smith | HOMAG library development team | the sink descriptions done (1.1, 2.8); open: the desc of `Axia_Anthrazit_R`, `None` | low — the side rule and the reaches are in the library |
+| 23 | [The island back panel names no peninsula](#23-the-island-back-panel-names-no-peninsula) | HOMAG Furniture_Smith | HOMAG library development team | the desc proposed; not reported | medium — the panel keeps its own length, the agent sends the group again |
 
 ### Not solved entirely by descriptions
 
@@ -81,7 +82,7 @@ library cannot calculate.
 | 18 | [A wide paired-door wall cabinet with a push opening the library cannot calculate](#18-a-wide-paired-door-wall-cabinet-with-a-push-opening-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no | low — the requested upper cabinet needs a replacement |
 | 19 | [A traditional front program with a retained plain colour the library cannot calculate](#19-a-traditional-front-program-with-a-retained-plain-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the sequencing desc proposed; calculation error not reported | partly | medium — switching the program needs an extra colour change |
 | 20 | [A push-to-open sink unit without the front gap it needs the library cannot calculate](#20-a-push-to-open-sink-unit-without-the-front-gap-it-needs-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the unit is not built, the agent needs a second create |
-| 22 | [A marble worktop at 40 mm the library cannot calculate](#22-a-marble-worktop-at-40-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the finishes of the create are not set, the agent needs a second call |
+| 22 | [A worktop at 40 mm the library cannot calculate](#22-a-worktop-at-40-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the worktop of the create keeps its finish, the agent needs a second call |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -629,7 +630,10 @@ The library also replaces the handle design the agent sets in the group attribut
 become the curved bow (100), the curved bow (100) becomes the strip (40). The server reports each
 replacement in `corrections`; a strip the library chose itself fails as above. A combination the
 handle mapping lacks fails the whole group: the curved bow (100) in stainless steel matt brushed at
-the default length 160 (Error 13003, "Could not find entry in tab_HandleMapping").
+the default length 160 (Error 13003, "Could not find entry in tab_HandleMapping"), and in black at
+128 mm — the bow the library chose itself for the rail handle (20) in black at the create; the group
+sent again with it is not built, nor with the rail handle, which the library replaces by the bow
+again.
 
 **Cause.** A library bug (D99): the strip (40) is `Normal` in the verified options of `UTB60` and its
 door, so the library accepts it, and the probe of 2026-10-24 gives Error 22025 for it on a lone
@@ -659,7 +663,7 @@ the handle position is known.
 `kitchen-oven-fridge-sink-corner`: a kitchen with a handle strip is built at the first create, or
 the agent picks a handle the library keeps and calculates.
 
-**Reproduce.** `mcp-test-2026-10-28_19-47-49`, gpt-6-astra 69 (`image-kitchen-back-right-corner`, bo-test): the group attributes of the create with `mod_HandleDesign` 40 and no `mod_HandlePosType` are not set — Error 22025 on the corner, tall and wall units, the raw "None" JSON error on `US2A60` and `UKS2A60`, the `mc_Handlestrip01` variant error on `SUBA60`; the finishes apply with `change-group-attribute` and the rail handle (20).
+**Reproduce.** `mcp-test-2026-10-28_19-47-49`, gpt-6-astra 69 (`image-kitchen-back-right-corner`, bo-test): the group attributes of the create with `mod_HandleDesign` 40 and no `mod_HandlePosType` are not set — Error 22025 on the corner, tall and wall units, the raw "None" JSON error on `US2A60` and `UKS2A60`, the `mc_Handlestrip01` variant error on `SUBA60`; the finishes apply with `change-group-attribute` and the rail handle (20). `repro-kitchen-16-2026-10-30`, gpt-6-astra-2 (kitchen image 16, bo-test): the create turns the rail handle (20) in black into the curved bow (100); the group sent again with the bow, then with the rail handle, fails twice — Error 13003 for `HandleDesign` 100, `HandleLength` 128, `HandleColor` Black on ten root modules —; with `mod_HandleLength` 160 it is built.
 
 ## 12. A worktop on the tall units from the group's countertop switch
 
@@ -982,22 +986,23 @@ and `None`.
 
 **Reproduce.** `docs/library-information/master-data.json`, the selections of `mod_SinkId`.
 
-## 22. A marble worktop at 40 mm the library cannot calculate
+## 22. A worktop at 40 mm the library cannot calculate
 
 **Library.** HOMAG Furniture_Smith. **Responsible.** HOMAG library development team.
 
-**Problem.** For a kitchen with a marble worktop the agent sends the group attributes of the create
-with `mod_CountertopColor` 324 (Dark marble) or 380 (Marble) and `mod_CountertopThk` 40, a
-thickness the attribute offers. The library cannot calculate the worktop — "Error 13002: Could not
-find entry in tab_EdgeMapping for input values: Program: All, Color: 324, EdgeClass: FrontClass1,
-BoardThickness: 40" — so none of the group attributes is set; the server builds the group with the
-finishes the articles come with and says so in `corrections`. The agent sends the finishes again
-with `change-group-attribute`, the countertop program Style and 25 mm, and they are set.
+**Problem.** For a kitchen with a marble or a maple worktop the agent sends the group attributes of
+the create with `mod_CountertopColor` 324 (Dark marble), 380 (Marble) or 230 (Maple) and
+`mod_CountertopThk` 40, a thickness the attribute offers. The library cannot calculate the worktop —
+"Error 13002: Could not find entry in tab_EdgeMapping for input values: Program: All, Color: 324,
+EdgeClass: FrontClass1, BoardThickness: 40". The server sets the other group attributes without the
+values the worktop carries and names those in `corrections`; the worktop keeps the colour and the
+thickness it comes with. The agent sends the worktop colour again with `change-group-attribute` at
+25 mm, and it is set.
 
 **Cause.** A library bug (D99), as far as the stored runs show: `mod_CountertopThk` offers 19, 25 and
 40; the countertop programs say "Thickness 25" (Style) and "Thickness 38" (Cube), none 40; the edge
-mapping has no entry for the marble colours at 40 mm. The desc of `mod_CountertopThk`, "Thickness of
-the countertop", names neither the program nor the colours a thickness takes. Not probed: whether
+mapping has no entry for the marble colours and maple at 40 mm. The desc of `mod_CountertopThk`,
+"Thickness of the countertop", names neither the program nor the colours a thickness takes. Not probed: whether
 the verified options of the worktop rule 40 mm out with a marble colour — if they do, the tools let
 an invalid value through and the issue is an MCP issue (D99, D107).
 
@@ -1009,6 +1014,8 @@ an invalid value through and the issue is an MCP issue (D99, D107).
 | 324 Dark marble | 25 mm | Style | yes | the same run, `change-group-attribute` |
 | 380 Marble | 40 mm | as the group comes | no: Error 13002 | `mcp-test-2026-10-28_19-47-49` gpt-6-astra 70, the create's island group |
 | 380 Marble | 25 mm | Style | yes | the same run, `change-group-attribute` |
+| 230 Maple | 40 mm | as the group comes | no: Error 13002 | `repro-kitchen-16-2026-10-30` gpt-6-astra-1, the create of kitchen image 16 |
+| 230 Maple | 25 mm | as the group comes | yes | the same run, `change-group-attribute` |
 
 Not known: whether 40 mm calculates with any colour, and which program builds it.
 
@@ -1021,5 +1028,45 @@ proposed desc goes into
 **Status.** Open, not reported to the library development team.
 
 **Test.** `full-kitchen-walnut-marble-corner`: the dark marble worktop is set with the create.
+`image-kitchen-16-peninsula`: the maple worktop is set with the create.
 
-**Reproduce.** `mcp-test-2026-10-28_19-47-49`, gpt-6-astra 52 (`full-kitchen-walnut-marble-corner`, bo-test): the group attributes of the create with `mod_CountertopColor` 324 and `mod_CountertopThk` 40 are not set, Error 13002 (`tab_EdgeMapping`, BoardThickness 40); `change-group-attribute` with the Style program and 25 mm sets them.
+**Reproduce.** `mcp-test-2026-10-28_19-47-49`, gpt-6-astra 52 (`full-kitchen-walnut-marble-corner`, bo-test): the group attributes of the create with `mod_CountertopColor` 324 and `mod_CountertopThk` 40 are not set, Error 13002 (`tab_EdgeMapping`, BoardThickness 40); `change-group-attribute` with the Style program and 25 mm sets them. `repro-kitchen-16-2026-10-30`, gpt-6-astra-1 (kitchen image 16, bo-test): the same with `mod_CountertopColor` 230 and `mod_CountertopThk` 40; `change-group-attribute` at 25 mm sets them.
+
+## 23. The island back panel names no peninsula
+
+**Library.** HOMAG Furniture_Smith. **Responsible.** HOMAG library development team.
+
+**Problem.** For a kitchen with a peninsula — a row of base units that stands free in the room at the
+end of an L or a U — the agent closes the backs of the peninsula's base units with `RWV` in the
+create, as the image-planning skill asks, but sizes the panel with `mod_Width`: the panel keeps its
+own length and covers part of the row, and the agent sends the group again. Without the skill's
+sentence the agent plans no panel at all, and the backs stand open on their legs.
+
+**Cause.** The desc of `RWV` (category Kitchen Island) names an island only: "Decorative back panel
+for a kitchen island", "Kitchen island, covering the visible back of the island cabinets", "island
+use only". A peninsula is no island, so the desc gives the agent no reason to take the panel for it.
+Nothing says that the panel's length along the row is `mod_IslandBackwallWidth` ("Width of the
+island backwall"); the agent sizes the panel with `mod_Width`, which its module does not carry, so
+the panel keeps its own length, and the agent sends the group again with `mod_IslandBackwallWidth`
+after a `find-attributes`.
+
+**How the library behaves.** The backs of base units are open, on legs; the panel closes them. A
+panel docked back to back with a base unit of the row and as long as the row closes the whole back.
+
+**To do.** The library: the desc of `RWV` in
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#18-island-back-panel),
+which names the peninsula and the length attribute.
+
+**Status.** The desc proposed; not reported to the library development team.
+
+**Test.** `image-kitchen-16-peninsula`: the peninsula's back is closed by a panel along the whole
+row with the create.
+
+**Reproduce.** `repro-kitchen-16-2026-10-30`, gpt-6-astra-1 and gpt-6-astra-2 (kitchen image 16,
+bo-test): no panel in the create; run 1 adds `RWV` with `merge-article-into-group` after the plan
+images, run 2 never. The ticket RML-18346, attempt 1 `ps_tad12jblqu4z859xrsoo98cr0r8ejd40`: the
+peninsula on legs; attempt 2 `ps_taeqtys9q57nxwyheklkh011rt4tig6`: `RWV` without
+`mod_IslandBackwallWidth`, one unit wide. `repro-kitchen-16-2026-10-30`, final-dev-1 to final-dev-3 (kitchen image 16, roomle-ui
+`feat/hi-mcp-performance` with the panel in the create): the create closes the peninsula with `RWV`
+and `mod_Width`, the panel keeps its own length; the group is sent again with
+`mod_IslandBackwallWidth`.

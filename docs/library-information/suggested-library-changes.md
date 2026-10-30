@@ -25,6 +25,7 @@ carries the description; it does not mean the underlying calculation issue is re
 | [1.5 Width-dependent tall-unit doors](#15-width-dependent-tall-unit-doors) | `HTB60` | applied |
 | [1.6 Adjustable shelves](#16-adjustable-shelves) | `AdjShelves` | applied |
 | [1.7 Tall oven housing](#17-tall-oven-housing) | `HOTS2AB60` | applied |
+| [1.8 Island back panel](#18-island-back-panel) | `RWV` | proposed |
 | [2.1 Colour values](#21-colour-values) | the colour list of `mod_FrontColor`, `mod_CarcaseColor`, `mod_UprightColor` and the other colour attributes | open |
 | [2.2 Front program](#22-front-program) | `mod_FrontProgram` | Modern applied; Tradition sequencing proposed |
 | [2.3 Carcase colours](#23-carcase-colours) | `mod_CarcaseColor`, `mod_CarcaseOutsideColor` | applied |
@@ -395,6 +396,44 @@ oven cabinet, appliance tower, baking cabinet, built-in oven housing
 
 AI_SELECTION_HINT:
 Select when a built-in oven at working height is requested. The unit carries one built-in appliance; a microwave above the oven is not possible.
+```
+
+### 1.8 Island back panel
+
+**Status.** Proposed, not applied. The desc names a kitchen island only; for a peninsula — a row of
+base units that stands free in the room at the end of an L or a U — the agent plans no back panel,
+and the backs of its base units stand open on their legs
+([library issue 23](../../.agents/backlog/library-issues.md#23-the-island-back-panel-names-no-peninsula)).
+
+`RWV` (DP25KI) — 981 characters:
+
+```
+FUNCTION:
+Decorative back panel for a row of base units that stands free in the room: a kitchen island or a peninsula.
+
+PURPOSE:
+Closes the backs of base units that face the room, so the row looks finished from all sides; without it the backs stand open on their legs.
+
+TYPICAL_PLACEMENT:
+Behind an island or a peninsula, covering the backs of its base units along the whole row.
+
+REQUIREMENTS:
+Mounted back to back with the base units of the row. Its length along the row is mod_IslandBackwallWidth: the length of the row it covers.
+
+RECOMMENDED_NEIGHBOURS:
+Island and peninsula base units, seating modules.
+
+RESTRICTIONS:
+Cladding only; no storage. Not for a row against a wall.
+
+STYLE_COMPATIBILITY:
+Finishing component. Matches the style of the kitchen it completes.
+
+SEARCH_KEYWORDS:
+island back panel, peninsula back panel, rear cladding, cover panel
+
+AI_SELECTION_HINT:
+Select for every island or peninsula whose base units show their backs to the room, as long as that row.
 ```
 
 ## 2. Attribute descriptions

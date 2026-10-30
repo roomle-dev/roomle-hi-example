@@ -28,8 +28,8 @@ Example login:
 | ----- | ----- |
 | User | `test` |
 | Password | `6mABjMDnEq4tvaN` |
-| Library | `Furniture_Smith` |
 | Backend ID | `HI_PRE_Roomle_Milestone_2` |
+| Library | `Furniture_Smith` |
 | Provider | Azure |
 | Model | `gpt-6-astra` |
 

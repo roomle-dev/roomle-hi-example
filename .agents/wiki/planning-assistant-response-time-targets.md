@@ -51,6 +51,12 @@ The first kitchen is the model calls before the create plus the create call itse
 - **The planner** builds the kitchen in 1–2 s. No tool and no planner step is on the path to the
   first kitchen for more than two seconds.
 
+After the first kitchen, the repairs take the time: a whole group sent again is a model step of 20
+to 70 s, as long as the first create, and a value the library cannot calculate adds a round to find
+and send another one. The served rules send a group again for a wrong layout only and change sizes
+and materials with the command tools, and a create sets every group attribute the library can
+calculate ([D128](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)).
+
 The planning assistant supplies the plan state with every turn, and `get-skill` answers a room
 skill with its planning reference in one result, so a creation fetches its skill in the first call
 and creates in the second. The baselines measure every part. The levers in place — the shared

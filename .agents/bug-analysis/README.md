@@ -38,9 +38,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 ## Current Documents
 
-| Document | Status | Description |
-|---|---|---|
-| [kitchen-image-16-planned-in-several-attempts.md](kitchen-image-16-planned-in-several-attempts.md) | Open | RML-18346: kitchen image 16 passes through wrong kitchens — the peninsula's open back, the kitchen in the articles' own finishes after a group attribute the library cannot calculate, wall units of uneven height, whole-group resends; where the 227 s and 288 s of gpt-6-astra go |
+No bug analysis is open.
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

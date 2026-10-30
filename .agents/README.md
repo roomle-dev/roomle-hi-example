@@ -142,7 +142,6 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | Document | Status | Last touched |
 |---|---|---|
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
-| [The planning assistant through the model proxy of the HI server](feature-analysis/planning-assistant-model-proxy.md) | Open — RML-18350 | 2026-10-30 |
 
 ### Refactoring Analyses
 

@@ -85,14 +85,15 @@
       // This is the minimum example to instantiate the planner with HI
       // it is plain javascript without any build step. This can be
       // used as a starting point for your own implementation.
-      // It is based on the release embedding-lib version 6.10.0
+      // It is based on the embedding-lib dev build 0.0.0-dev-4c2797a
       // This is how an agency would typically implement the planner
-      import RoomleConfiguratorApi from 'https://unpkg.com/@roomle/embedding-lib@6.10.0';
+      import RoomleConfiguratorApi from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-4c2797a';
       import {
         omGetRequest,
         omPostRequest,
         setupHi,
-      } from 'https://unpkg.com/@roomle/embedding-lib@6.10.0/hi.js';
+        startPlanningAssistant,
+      } from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-4c2797a/hi.js';
       (async function () {
         // BEGIN: ##################### SC specific settings
 
@@ -103,6 +104,9 @@
         const getHiServerBaseUrl = () =>
           `https://dfscfgtest01-app.azurewebsites.net/proxy_request?url=`;
         const getHiAuthData = () => 'Basic ' + btoa('smith:BGr0eRsQAxL2IQQ');
+        // The model proxy of the backend for the AI Planning Assistant
+        const getAiProxyBaseUrl = () =>
+          'https://dfscfgtest01-app.azurewebsites.net/api/ai/v1';
 
         // Settings per shop system
         // The library id which should be used in this shop system
@@ -151,6 +155,17 @@
             language: 'en-US,en', // we can also use the language from the browser
           },
         };
+        // The backend of the user says whether the AI Planning Assistant is enabled
+        const backends = await (
+          await fetch(
+            'https://dfscfgtest01-app.azurewebsites.net/backends/list',
+            {
+              headers: { Authorization: getHiAuthData() },
+            }
+          )
+        ).json();
+        const enableAIPlanning =
+          backends.length === 1 && backends[0].enableAIPlanning === true;
         const options = {
           overrideServerUrl: 'https://www.roomle.com/t/bo-test/',
           customApiUrl: 'https://api.roomle.com/v2',
@@ -163,6 +178,7 @@
             // globalCallbacks is something we want to remove in the future
             globalCallbacks: false,
             advancedDocking: true,
+            planningAssistant: enableAIPlanning,
           },
           elements: {
             bottom_bar: false,
@@ -263,6 +279,20 @@
           }
         });
         await instance.ui.loadObject(resolvedInitialPlanId);
+        if (enableAIPlanning) {
+          // The model, its endpoint and its key stay in the backend
+          await startPlanningAssistant(
+            instance,
+            {
+              provider: 'openai-compatible',
+              baseUrl: getAiProxyBaseUrl(),
+              model: 'planning',
+              headers: { Authorization: getHiAuthData() },
+              readsImages: true,
+            },
+            new AbortController().signal
+          );
+        }
       })();
     </script>
   </body>

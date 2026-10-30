@@ -40,7 +40,6 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 | Document | Status | Description |
 |---|---|---|
 | [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open — product integration scope | Core MCP/chat prototype implemented; reusable integration package, production agent loop and product qualification remain open |
-| [planning-assistant-model-proxy.md](planning-assistant-model-proxy.md) | Open | RML-18350: the planning assistant of the sales configurator page through the model proxy of the HI server — an OpenAI-compatible provider in the embedding-lib, the images of a tool result on Chat Completions, the page on the flag `enableAIPlanning` |
 
 Add feature analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `group-adjustment-to-wall-width.md`).

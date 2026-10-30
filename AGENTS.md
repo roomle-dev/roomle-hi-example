@@ -97,6 +97,8 @@ The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) prov
 │   ├── index.html              # Sign-in view and planner view
 │   ├── src/                    # main.ts, fields-cookie.ts, hi-server.ts, model-config.ts, planner.ts, query-options.ts, style.css, assets/
 │   └── tests/                  # Unit tests (Node test runner)
+├── df-salesPortal_sc-example/  # Sales portal example: the df-salesPortal page, the chat on the model proxy of the HI server
+│   └── index.html              # Single file, inline JS (.agents/context/df-sales-portal-sc-example.md)
 ├── package.json                  # Project metadata and scripts
 ├── README.md                     # Quickstart and usage guide
 ├── AGENTS.md                     # This file - AI assistant instructions

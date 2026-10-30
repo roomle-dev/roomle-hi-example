@@ -121,7 +121,8 @@ npm run start:sc
 ```
 
 The browser opens `http://localhost:3300` with a sign-in page. Enter the user and password of the HI
-server, the library and, if your login has more than one backend, the backend ID, and for the chat
+server and, if your login has more than one backend, the backend ID; the library is optional when the
+backend has one, and for the chat
 select the provider and enter the exact model ID and its API key. **Start planning** opens the planner; the button at the bottom opens the
 chat. Without a model, the chat runs on the model proxy of the HI server when your backend enables
 the AI planning; otherwise the planner opens without a chat. On the first sign-in the page asks whether

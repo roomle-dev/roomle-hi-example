@@ -64,7 +64,10 @@ export const startPlanner = async (
         openCloseAnimation: true,
         planningAssistant: chat !== undefined,
       },
-      catalogRootTag: [...HI_ROOT_TAGS, ...(backend?.additionalCatalogs ?? [])],
+      // the additional catalogs of the backend, each catalog once
+      catalogRootTag: [
+        ...new Set([...HI_ROOT_TAGS, ...(backend?.additionalCatalogs ?? [])]),
+      ],
       configureInRoom: backend?.configureInRoom ?? false,
       hi: hiOptions,
       externalObjectSettings: {

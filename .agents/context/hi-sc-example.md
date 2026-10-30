@@ -8,7 +8,7 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 
 1. **Sign-in view** (`index.html`): a form over the background image
    `src/assets/say-hi-to-homag-intelligence.jpg` with the user and password of the HI server, the
-   backend ID and library, and the optional provider, model and API key of the chat. Every field
+   optional backend ID and library, and the optional provider, model and API key of the chat. Every field
    starts blank; the provider is a selection of the providers of the embedding-lib. `main.ts` fills
    the fields from the sign-in cookie, then from the query parameter of each field's `name`
    (`user`, `password`, `backendId`, `libraryId`, `provider`, `model`, `apiKey`), so a query
@@ -20,8 +20,12 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
    - the user and password → the Basic authorization; `fetchBackend` (`hi-server.ts`) reads
      `GET <HI server>/backends/list` with it. 401 is "Wrong user or password". The backend ID is
      optional: with one, a backend ID that is not in the list is an error, and the backend's
-     `planId`, `additionalCatalogs` and `configureInRoom` go to the planner; without one, the planner
-     gets no backend entry (default plan, no additional catalogs);
+     `planId`, `additionalCatalogs` (beside the fixed root tags, each catalog once) and
+     `configureInRoom` go to the planner; without one, the planner gets no backend entry (default
+     plan, no additional catalogs);
+   - the library is optional as well: an entered one wins, otherwise the backend's `libraryId`
+     (`resolveLibraryId`, `hi-server.ts`); without both, "Enter a library, or a backend ID that has
+     one" on the form. A `?id=` plan goes to the planner over the backend's plan;
    - without a provider, model and API key, the chat runs on the model proxy of the HI server
      (`modelProxyConfig`, [The chat model](#the-chat-model)) when `fetchBackend` reports
      `modelProxy`: the list has exactly one backend and its `enableAIPlanning` is `true` — the proxy
@@ -60,7 +64,7 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 | `hi-sc-example/tests/model-config.test.ts` | the unit tests of `planningAssistantConfig` |
 | `hi-sc-example/tests/fields-cookie.test.ts` | the unit tests of the sign-in cookie |
 | `hi-sc-example/tests/query-options.test.ts` | the unit tests of `plannerQueryOptions` |
-| `hi-sc-example/tests/hi-server.test.ts` | the unit tests of `hiProxyBaseUrl`, `fetchBackend` and `modelProxyConfig` |
+| `hi-sc-example/tests/hi-server.test.ts` | the unit tests of `hiProxyBaseUrl`, `fetchBackend`, `resolveLibraryId` and `modelProxyConfig` |
 
 ## The planner options
 
@@ -116,7 +120,7 @@ of roomle-ui.
 | `tests/model-config.test.ts` | provider, model ID and key passed through unchanged, the Foundry endpoint of an `azure` model, a chat without its provider, model or key |
 | `tests/fields-cookie.test.ts` | the fields stored and read back with any characters, among other cookies; the cookie attributes; no fields without the cookie |
 | `tests/query-options.test.ts` | every query parameter but the login fields forwarded; `true`, `false` and numbers converted; `language` sets `locale`; nothing without query parameters |
-| `tests/hi-server.test.ts` | the proxy URL with and without a backend ID; the backend of the ID, the sign-in check without an ID, an unknown backend ID; the model proxy for the only backend that enables it, none for a backend without the flag or a user of several backends (`fetch` mocked); the config of the model proxy |
+| `tests/hi-server.test.ts` | the proxy URL with and without a backend ID; the backend of the ID, the sign-in check without an ID, an unknown backend ID; the model proxy for the only backend that enables it, none for a backend without the flag or a user of several backends (`fetch` mocked); the entered library over the backend's, the backend's without one, the message without both; the config of the model proxy |
 
 ## GitHub Pages
 

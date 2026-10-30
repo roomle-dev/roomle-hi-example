@@ -4,6 +4,7 @@ import {
   fetchBackend,
   hiProxyBaseUrl,
   modelProxyConfig,
+  resolveLibraryId,
 } from '../src/hi-server.ts';
 
 const BACKEND = {
@@ -74,6 +75,23 @@ describe('fetchBackend', () => {
       { ...BACKEND, backendId: 'B_2', enableAIPlanning: true },
     ]);
     assert.equal((await fetchBackend('Basic x', 'B_1')).modelProxy, false);
+  });
+});
+
+describe('resolveLibraryId', () => {
+  it('takes the entered library over the one of the backend', () => {
+    assert.equal(resolveLibraryId('Other_Lib', BACKEND), 'Other_Lib');
+  });
+
+  it('takes the library of the backend without an entered one', () => {
+    assert.equal(resolveLibraryId('', BACKEND), 'Lib');
+  });
+
+  it('asks for a library without an entered one and without a backend', () => {
+    assert.throws(
+      () => resolveLibraryId('', undefined),
+      /Enter a library, or a backend ID that has one/
+    );
   });
 });
 

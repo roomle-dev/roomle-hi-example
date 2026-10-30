@@ -1,5 +1,9 @@
 import { fieldsCookie, storedFields } from './fields-cookie.ts';
-import { fetchBackend, modelProxyConfig } from './hi-server.ts';
+import {
+  fetchBackend,
+  modelProxyConfig,
+  resolveLibraryId,
+} from './hi-server.ts';
 import { planningAssistantConfig, type Provider } from './model-config.ts';
 import { startPlanner, type PlannerSettings } from './planner.ts';
 import { plannerQueryOptions } from './query-options.ts';
@@ -55,7 +59,7 @@ const readSettings = async (fields: FormData): Promise<PlannerSettings> => {
   return {
     authorization,
     backend,
-    libraryId: value('libraryId'),
+    libraryId: resolveLibraryId(value('libraryId'), backend),
     chat: chat ?? (modelProxy ? modelProxyConfig(authorization) : undefined),
     queryOptions: plannerQueryOptions(location.search, [...fields.keys()]),
   };

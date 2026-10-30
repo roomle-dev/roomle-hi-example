@@ -60,6 +60,21 @@ export const fetchBackend = async (
 };
 
 /**
+ * The library of the sign-in: the entered one, else the library of the
+ * backend; one of them is needed.
+ */
+export const resolveLibraryId = (
+  libraryId: string,
+  backend?: HiBackend
+): string => {
+  const resolved = libraryId || backend?.libraryId;
+  if (!resolved) {
+    throw new Error('Enter a library, or a backend ID that has one');
+  }
+  return resolved;
+};
+
+/**
  * The chat on the model proxy of the HI server: the model, its endpoint and
  * its key stay in the backend; the page authorizes with the sign-in.
  */

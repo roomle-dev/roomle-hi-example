@@ -57,6 +57,11 @@ http://localhost:3300/hi-sc/?id=<plan-id>&overrideServerUrl=http://localhost:517
 
 **4. Ask the agent** — the button at the bottom of the planner opens the chat.
 
+**5. Save or order** — **Save Draft** at the bottom of the planner saves the plan as a draft;
+**Add to Cart** sends the plan with its prices to the HOMAG order manager, as "Send to OM" with
+price of the presets example. The answer, the import status and the link of the order show in the
+browser console.
+
 | Script (in `hi-sc-example/`) | Runs |
 | ---------------------------- | ---- |
 | `npm run dev` | the Vite dev server on :3300 |

@@ -25,7 +25,7 @@ carries the description; it does not mean the underlying calculation issue is re
 | [1.5 Width-dependent tall-unit doors](#15-width-dependent-tall-unit-doors) | `HTB60` | applied |
 | [1.6 Adjustable shelves](#16-adjustable-shelves) | `AdjShelves` | applied |
 | [1.7 Tall oven housing](#17-tall-oven-housing) | `HOTS2AB60` | applied |
-| [1.8 Island back panel](#18-island-back-panel) | `RWV` | proposed |
+| [1.8 Island back panel](#18-island-back-panel) | `RWV` | applied |
 | [2.1 Colour values](#21-colour-values) | the colour list of `mod_FrontColor`, `mod_CarcaseColor`, `mod_UprightColor` and the other colour attributes | open |
 | [2.2 Front program](#22-front-program) | `mod_FrontProgram` | Modern applied; Tradition sequencing proposed |
 | [2.3 Carcase colours](#23-carcase-colours) | `mod_CarcaseColor`, `mod_CarcaseOutsideColor` | applied |
@@ -38,7 +38,7 @@ carries the description; it does not mean the underlying calculation issue is re
 | [2.10 Backsplash](#210-backsplash) | `mod_CreateBacksplash` | applied; result-field wording needs correction |
 | [2.11 Shelf descriptor](#211-shelf-descriptor) | `mod_ShelfadjDescriptor` | text applied; actual format and example open |
 | [2.12 Oven article codes](#212-oven-article-codes) | `mod_OvenId1`, `mod_OvenId2`, `mod_OvenId3` | applied |
-| [2.13 Island back panel length](#213-island-back-panel-length) | `mod_IslandBackwallWidth` | proposed |
+| [2.13 Island back panel length](#213-island-back-panel-length) | `mod_IslandBackwallWidth` | applied |
 
 ## 1. Article descriptions
 
@@ -401,14 +401,8 @@ Select when a built-in oven at working height is requested. The unit carries one
 
 ### 1.8 Island back panel
 
-**Status.** Proposed, not applied. The desc names a kitchen island only; for a peninsula — a row of
-base units that stands free in the room at the end of an L or a U — the agent plans no back panel,
-and the backs of its base units stand open on their legs. It names no length attribute either: the
-calculated panel carries `mod_Width` 1000, which the article catalog lists among its dimensions, and
-the agent sizes the panel with it — the panel's module does not take `mod_Width`, so the panel keeps
-its own length
-([library issue 23](../../.agents/backlog/library-issues.md#23-the-island-back-panel-names-no-peninsula)).
-The desc of the length attribute is [2.13](#213-island-back-panel-length).
+**Status.** Applied verbatim. The desc of the length attribute is
+[2.13](#213-island-back-panel-length).
 
 `RWV` (DP25KI) — 988 characters:
 
@@ -644,10 +638,7 @@ built, and nothing reports the drop
 
 ### 2.13 Island back panel length
 
-**Status.** Proposed, not applied. The desc does not say that the attribute is the length of the
-panel along the row, nor that the panel's length is not `mod_Width`
-([library issue 23](../../.agents/backlog/library-issues.md#23-the-island-back-panel-names-no-peninsula),
-the article's desc in [1.8](#18-island-back-panel)).
+**Status.** Applied verbatim. The article's desc is [1.8](#18-island-back-panel).
 
 **Attribute.** `mod_IslandBackwallWidth` (Width), the module `mr_IslandBackwall` of `RWV`.
 

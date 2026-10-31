@@ -46,7 +46,6 @@ library accepts (D99); the fix is in the library. Details:
 | [20 — A push-to-open sink unit without the front gap it needs the library cannot calculate](library-issues.md#20-a-push-to-open-sink-unit-without-the-front-gap-it-needs-the-library-cannot-calculate) | HOMAG library bug: set the front gap a push opening needs with `mod_OpeningType`, or rule the opening out in the verified options of the units whose gap is too small | low |
 | [21 — The sink descriptions: a value desc with its pasted table row, and what None builds](library-issues.md#21-the-sink-descriptions-a-value-desc-with-its-pasted-table-row-and-what-none-builds) | HOMAG library: the desc of `Axia_Anthrazit_R` is the proposed text of 2.8 alone; explain what `None` builds | low |
 | [22 — A worktop at 40 mm the library cannot calculate](library-issues.md#22-a-worktop-at-40-mm-the-library-cannot-calculate) | HOMAG library bug: calculate the worktop at 40 mm for every colour it offers, or rule 40 mm out in the verified options; the desc of `mod_CountertopThk` names the program and colours each thickness takes | low |
-| [23 — The island back panel names no peninsula](library-issues.md#23-the-island-back-panel-names-no-peninsula) | HOMAG library: the desc of `RWV` names the peninsula and its length attribute `mod_IslandBackwallWidth`, the desc of `mod_IslandBackwallWidth` says it is the panel's length, not `mod_Width` (suggested-library-changes 1.8, 2.13) | medium |
 
 ## Library neutrality of the MCP server
 

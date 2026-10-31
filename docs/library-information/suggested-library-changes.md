@@ -38,6 +38,7 @@ carries the description; it does not mean the underlying calculation issue is re
 | [2.10 Backsplash](#210-backsplash) | `mod_CreateBacksplash` | applied; result-field wording needs correction |
 | [2.11 Shelf descriptor](#211-shelf-descriptor) | `mod_ShelfadjDescriptor` | text applied; actual format and example open |
 | [2.12 Oven article codes](#212-oven-article-codes) | `mod_OvenId1`, `mod_OvenId2`, `mod_OvenId3` | applied |
+| [2.13 Island back panel length](#213-island-back-panel-length) | `mod_IslandBackwallWidth` | proposed |
 
 ## 1. Article descriptions
 
@@ -402,23 +403,27 @@ Select when a built-in oven at working height is requested. The unit carries one
 
 **Status.** Proposed, not applied. The desc names a kitchen island only; for a peninsula — a row of
 base units that stands free in the room at the end of an L or a U — the agent plans no back panel,
-and the backs of its base units stand open on their legs
+and the backs of its base units stand open on their legs. It names no length attribute either: the
+calculated panel carries `mod_Width` 1000, which the article catalog lists among its dimensions, and
+the agent sizes the panel with it — the panel's module does not take `mod_Width`, so the panel keeps
+its own length
 ([library issue 23](../../.agents/backlog/library-issues.md#23-the-island-back-panel-names-no-peninsula)).
+The desc of the length attribute is [2.13](#213-island-back-panel-length).
 
-`RWV` (DP25KI) — 981 characters:
+`RWV` (DP25KI) — 988 characters:
 
 ```
 FUNCTION:
 Decorative back panel for a row of base units that stands free in the room: a kitchen island or a peninsula.
 
 PURPOSE:
-Closes the backs of base units that face the room, so the row looks finished from all sides; without it the backs stand open on their legs.
+Closes the backs of base units that face the room, so the row looks finished from all sides.
 
 TYPICAL_PLACEMENT:
 Behind an island or a peninsula, covering the backs of its base units along the whole row.
 
 REQUIREMENTS:
-Mounted back to back with the base units of the row. Its length along the row is mod_IslandBackwallWidth: the length of the row it covers.
+Mounted back to back with the base units of the row. Its length along the row is mod_IslandBackwallWidth, not mod_Width: the length of the row it covers, the widths of its base units added up.
 
 RECOMMENDED_NEIGHBOURS:
 Island and peninsula base units, seating modules.
@@ -636,3 +641,16 @@ built, and nothing reports the drop
 | `mod_OvenId1` | Article code 1 | Article code of the oven | Article code of the built-in appliance (oven or microwave) the unit carries. |
 | `mod_OvenId2` | Article code 2 | Article code of the oven | Article code of a second built-in appliance. A unit with one appliance niche builds only its first code; a second code is accepted but not built. |
 | `mod_OvenId3` | Article code 3 | Article code of the oven | Article code of a third built-in appliance. A unit with one appliance niche builds only its first code; a further code is accepted but not built. |
+
+### 2.13 Island back panel length
+
+**Status.** Proposed, not applied. The desc does not say that the attribute is the length of the
+panel along the row, nor that the panel's length is not `mod_Width`
+([library issue 23](../../.agents/backlog/library-issues.md#23-the-island-back-panel-names-no-peninsula),
+the article's desc in [1.8](#18-island-back-panel)).
+
+**Attribute.** `mod_IslandBackwallWidth` (Width), the module `mr_IslandBackwall` of `RWV`.
+
+| Attribute | Name | `desc` before | Proposed `desc` |
+|---|---|---|---|
+| `mod_IslandBackwallWidth` | Width | Width of the island backwall | Length of the island back panel along the row of base units it covers, in mm. Set it to the length of that row: the widths of its base units added up. The panel's length is this attribute, not mod_Width. |

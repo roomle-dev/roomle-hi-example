@@ -204,7 +204,7 @@ rootId? }`, one point and one rotation.
 - A group outside the room is allowed — the user may ask for one.
 - An existing group is moved with `place-group`: a wall by side label or index, an alignment along
   it (the side label of the adjoining wall puts it flush into that corner, a corner article into
-  the corner) and an offset; the server computes the position from the calculated group — see
+  the corner) and an offset, or `posGroup` and `posRotationZ` in the placement frame for a freestanding move or turn. Wall placement keeps height; point placement uses the supplied height. The server derives the raw transform from the calculated group — see
   [hi-mcp-tools.md](./hi-mcp-tools.md#place-group).
 - An existing group is edited with the command tools: a unit is added (docked to a free docking
   vector), inserted, replaced, swapped or removed, attributes are changed, and groups are joined —

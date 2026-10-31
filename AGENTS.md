@@ -328,6 +328,15 @@ One exception: the attribute filter of the tools (`isAgentFacingAttribute`, room
 article. The library does not mark such attributes yet; once it does, the filter reads the mark
 (D102 of [roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)).
 
+### Library Description Suggestions
+
+Before adding a suggested library description, search
+[`docs/library-information/suggested-library-changes.md`](./docs/library-information/suggested-library-changes.md)
+by the item's article, module or attribute ID (and value where applicable), and verify whether a
+suggestion already exists. **Only one suggested description per item.** Revise the existing entry
+in place and update its status; never append a second description or section for the same item.
+Keep an applied item's entry, and revise that entry when a further change is proposed.
+
 ### Guards Are a Last Resort
 
 A **guard** is a check in the HI tools that refuses an agent's input because it identifies the

@@ -1654,7 +1654,7 @@
     {
       "id": "mr_IslandBackwall",
       "name": "Island backwall",
-      "desc": "Module for island backwall",
+      "desc": "Rear finishing unit for a freestanding base-unit row. Builds a vertical panel and a separate horizontal cap. mod_Height is the total height from the element bottom to the cap top. mod_Depth is the cap depth and mod_PaneltopThk its thickness. Cap height does not follow the generated worktop automatically.",
       "group": "Root",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/916a8cdb-e014-4034-9a94-27d1eada9564_islandbackwall.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=q2lVAMJMys87VEuft7jv0CA0Ahl8dbQAR6qZwXJSk0s%3D",
       "assignedAttributes": [

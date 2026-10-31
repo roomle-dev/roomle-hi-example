@@ -12,7 +12,7 @@ them — is [roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https
 |---|---|
 | `get-plan-context` | Get rooms, articles, the attribute vocabulary, groups, obstacles, installation elements; masterData and the full article descriptions on request |
 | `create-or-replace-groups` | Create, modify and extend groups; position new groups |
-| `place-group` | Move an existing group against a wall or into a room corner |
+| `place-group` | Move an existing group to a wall/corner or to a point and rotation |
 | `get-authoring-rules` | Get HI authoring rules |
 | `get-skill` | Get a planning skill (planning from an image, kitchen, kitchen in France, living room) with the planning reference it asks to read before planning, or one of its files alone — the optional source catalog |
 
@@ -224,25 +224,31 @@ every article — the server places the anchor by the back left bottom
 corner of its docking vectors, also for a range hood whose origin is its centre. See the
 [authoring rules skill](./hi-authoring-rules.md#positioning-a-group).
 
+Positioned roots with visible calculated parts carry read-only `bottomMm` and `topMm`: absolute measured heights, including generated worktops. Missing geometry supplies no height facts. Resubmitting a returned group ignores these fields.
+
 **Existing groups**: a group resubmitted with its id and without placement keeps its position; a
 placement on a group that is already in the plan is not used (the group keeps its position, and
 `corrections` says so) — move it with `place-group`.
 
 ### place-group
 
-**Purpose**: Move an existing group against a wall or into a room corner; the server computes the
-position
+**Purpose**: Move an existing group to a wall/corner or to an explicit point and rotation.
 
 **Parameters**:
 ```typescript
 {
   groupId: string,                       // a unique prefix is accepted
-  wall: 'left' | 'right' | 'top' | 'bottom' | 'back' | 'front' | number, // side label or wall index
+  wall?: 'left' | 'right' | 'top' | 'bottom' | 'back' | 'front' | number, // side label or wall index
   alignment?: 'start' | 'center' | 'end' | 'left' | 'right' | 'top' | 'bottom' | 'back' | 'front', // default 'center'
   offsetMm?: number,                     // along the wall, default 0
   roomIndex?: number,                    // default 0
+  posGroup?: [number, number, number],    // point form, instead of wall
+  posRotationZ?: number,                 // required with posGroup, including 0
+  rootId?: string,                       // selects one of two corner roots
 }
 ```
+
+Point placement uses the same docking corner and rotation as a new placement. The supplied height is absolute; a two-number floor point receives height 0. It preserves the exact target, including outside the room, and reports overlaps through `hint`. Turning about a fixed centre also requires adjusting the docking-corner point. Wall fields beside point fields win and report those unused fields.
 
 A side label as alignment means flush into the corner with that adjoining wall (`wall: 'right'`,
 `alignment: 'top'` is the back right corner); a group with a corner article goes into that corner.
@@ -261,7 +267,7 @@ widen the units at the end of a row, and it builds the end there without the wor
 so after the reload the group is measured as built there and placed once more by that measure when
 it does not stand as asked (D70).
 
-**Returns**: `placedIn` (`'corner'` or `'wall'`), the wall, and the resulting group with its
+**Returns**: `placedIn` (`'point'`, `'corner'` or `'wall'`), the wall for a wall target, and the resulting group with its
 `position`, plus `corrections` when the server corrected the request (an overlap, a parallel
 alignment, a group that already stands there) and a `hint` when a root module stands on an object or
 in front of a door or a window after the move, with the free stretches of its wall and the `offsetMm` that keeps it clear of a

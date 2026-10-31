@@ -385,3 +385,7 @@ for compared variants. A fresh browser does not imply a cold provider cache.
 - [HI MCP Tools Reference](../.agents/skills/hi-mcp-tools.md)
 - [Roomle HI Concepts](../.agents/skills/roomle-hi-concepts.md)
 - [Article Catalog](../.agents/skills/hi-authoring-rules.md)
+
+### Kitchen-5 island regressions
+
+The image cases `image-kitchen-5-island` and `image-kitchen-5-other-corner` check the initial create and final layout by the island's axis, working aisle and exposed rear relative to the kitchen runs. `image-kitchen-5-raised-cap` preserves an explicitly requested raised cap. The two-turn `image-kitchen-5-turn-island` uses a textual setup of that layout, then requests a half turn of the existing island around its centre: identity, docking and finishes remain stable through point-form `place-group`. Its setup is textual because conversation images are attached to the last turn. Surface checks compare measured root heights and distinguish a separate cap from a continuous generated worktop.

@@ -38,7 +38,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 ## Current Documents
 
-No bug analysis is open.
-
-Add bug analysis documents as needed following the naming convention:
-`kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).
+| Document | Status | Date |
+|---|---|---|
+| [Kitchen 5: island orientation, back-panel construction and correction feedback](kitchen-5-island-orientation-and-back-panel.md) | Open | 2026-10-31 |

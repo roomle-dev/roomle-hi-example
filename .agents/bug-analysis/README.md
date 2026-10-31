@@ -38,7 +38,9 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 ## Current Documents
 
-No bug analysis is open.
+| Document | Status | Description |
+|---|---|---|
+| [kitchen-image-16-back-panel-length-and-wall-units-past-the-wall.md](kitchen-image-16-back-panel-length-and-wall-units-past-the-wall.md) | Open | RML-18346: the catalog of `get-plan-context` names `mod_Width` as the dimension of the back panel `RWV`, which its module does not take, and the create drops the override without a word — the panel at its own length, the whole group sent again; the wall units of a leg counted past the window wall, which the instructions do not tell the agent to check and the result may not warn about (D22) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

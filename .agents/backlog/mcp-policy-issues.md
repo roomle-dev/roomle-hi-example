@@ -12,9 +12,10 @@ The MCP server serves every HI library, not only Furniture_Smith. The policy is 
 > `desc` in the library data, never a served rule.
 
 This document lists what in the implementation of the MCP server still carries library-specific
-content. Scope: the served text and the logic in `hi-mcp/hi-mcp-server/`, and the result messages
-of the HI tool commands in roomle-ui (`packages/web-sdk/packages/homag-intelligence/src/`), which the
-server passes on as the results of its plan-changing tools.
+content. Scope: the served text and the logic of the HI tool set (roomle-ui `hi-mcp/`), and the
+logic and the result messages of the HI tool commands in roomle-ui
+(`packages/web-sdk/packages/homag-intelligence/src/`: `hi-tool-*.ts`, `hi-group-layout.ts`,
+`hi-wall-placement.ts`, `hi-group-placement.ts`), which perform the plan-changing tools.
 
 Every item is a violation of the policy above: it sits in the served text, the results or the
 server's logic.
@@ -26,6 +27,7 @@ server's logic.
 | 1 | `hi-mcp-server.ts` | Served text (`AUTHORING_RULES`, `INSTRUCTIONS`, tool descriptions) bakes in one furniture domain's taxonomy and fixed measures, and names one library's concrete content | high |
 | 2 | `tool-executors.ts`; roomle-ui HI tool commands | Spelling correction carries a fixed vocabulary in the logic; result messages name furniture kinds | medium |
 | 3 | `agent-facing.ts`; HOMAG library | The attribute filter names the element type `mod_TypeElement` because the library does not mark the attributes the agent leaves to the article | low |
+| 4 | `hi-group-layout.ts`, `hi-tool-docking.ts` | The layout and the docking read sizes by one library's attribute ids `mod_Width` and `mod_Height`, tell the kinds of articles by one library's category names and a 1500 mm threshold | high |
 
 ## 1. Served text in `hi-mcp-server.ts`
 
@@ -68,3 +70,46 @@ leaves to the article, so the function names one library's attribute in the tool
 | Item | To do | Priority |
 |---|---|---|
 | The library marks the attributes the agent leaves to the article | HOMAG library: a mark on the attribute in the master data. roomle-ui: `isAgentFacingAttribute` reads the mark instead of the id; the id `mod_TypeElement` leaves the code | low |
+
+## 4. The layout and the docking name one library's attribute ids, categories and a measure
+
+The logic of the HI tool commands that builds the docking from the relations and corrects the
+relations of wall units (roomle-ui `hi-group-layout.ts`, `hi-tool-docking.ts`) carries one
+library's content as constants. Every one of them is a violation of the policy: it is the tools'
+logic, not a comment, a test or a document.
+
+| Where | What | Used for |
+|---|---|---|
+| `hi-group-layout.ts:25`, `:27` | `HEIGHT = 'mod_Height'`, `WIDTH = 'mod_Width'` | `articleHeight`, `rootHeight` and `rootWidth` (`:172-199`) read the size of an article from the catalog's `dimensions` and of a root from its overrides by these ids: the hang height of a wall unit (D35, the height of the tall units minus the heights of the wall unit and the floor unit), the tall unit by height, the places of wall units along a floor row (G64) |
+| `hi-tool-docking.ts:24` | `ARTICLE_WIDTH = 'mod_Width'` | `articleWidth` (`:26`), the width of an article for the docking |
+| `hi-group-layout.ts:16-23` | `WALL_UNIT = /\bwall ?units?\b/i`, `TALL_UNIT = /\btall ?units?\b/i`, `BASE_UNIT = /\bbase ?units?\b/i`, `HOOD = /hood/i` | `isWallUnitArticle`, `isTallUnitArticle`, `isBaseUnitArticle`, `isHoodArticle`: the kind of an article from its category text — every relation correction of wall units, tall units, base units and the range hood (G34, G35, G40 to G45, G51, G63, G64) and `wallRootsOf` |
+| `hi-group-layout.ts:160` | `TALL_HEIGHT_MM = 1500` | a tall unit by height when the category does not say so; the comment names the library and the article the threshold was chosen for |
+
+The constants of `hi-group-layout.ts` and `hi-tool-docking.ts` came with the move of the tools
+into the planner (roomle-ui `16863864f`, 2026-10-13). The layout needs the sizes and the kinds of
+the articles before the load — to build the docking from the relations and to put a wall unit where
+it hangs — and takes them by one library's attribute ids, category names and a measure instead of
+from the library's data.
+
+Library-neutral sources the tools already have:
+
+- **Sizes** from the geometry of the calculated article template: the catalog's `dockingVectors`
+  carry their start and end points, so the width of a root module is the distance between its left
+  and right docking vectors and its height the height of its Top vectors; the parts' bounding box
+  (`rootFootprintPoints`, `rootHeights` in `hi-plan-space.ts`) gives both for a loaded root. A root
+  override of a size still has to be read by its id: the id is the one the catalog's `dimensions`
+  name for that root module, not a constant.
+- **Kinds** from the data model, not from the category text: the default insert level of a root
+  module (`insertLevels` of the catalog, the height a root is inserted at) tells a hanging unit from
+  a standing one; the docking vectors tell what docks on top of what. Where the data model cannot
+  tell a kind the layout needs — the range hood above the hob —, the library marks it in the master
+  data, as item 3 asks for the attributes the agent leaves to the article.
+- **Measures**: no fixed measure in the logic. The height of the tall units of a group comes from
+  the group; without one, from the articles of the catalog whose default insert level and height
+  make them the tallest standing articles.
+
+| Item | To do | Priority |
+|---|---|---|
+| The attribute ids `mod_Width` and `mod_Height` leave the layout and the docking | roomle-ui `hi-group-layout.ts:25-27`, `:172-199`, `hi-tool-docking.ts:24-30`: read the width and the height of an article from the geometry of its template (docking vectors, parts), and a root's size override by the dimension ids the catalog serves for its root module | high |
+| The category patterns and the 1500 mm threshold leave the layout | roomle-ui `hi-group-layout.ts:16-23`, `:160`: tell a hanging unit, a standing unit and a stacked unit from the insert levels and the docking vectors of the data model; a kind the data model cannot tell is a mark of the library in the master data | high |
+| A policy test over the tool logic | roomle-ui `__tests__/hi-mcp/hi-mcp-server-test.ts` guards the served text only; add a test that the sources of the tool logic (`hi-mcp/`, `hi-tool-*.ts`, `hi-group-layout.ts`, `hi-wall-placement.ts`, `hi-group-placement.ts`) contain no `mod_` literal but the exception of item 3, no library name and no category text | medium |

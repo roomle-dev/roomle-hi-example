@@ -74,8 +74,9 @@ node .agents/scripts/generate-article-catalog.js
 every `desc` change suggested to the library, applied or not, with its status. Compare each change
 that is not applied yet with the fetched articles and master data. When the library carries it, set
 its status to applied and name what differs from the proposal; never delete the change. Then update
-the **Status** of its issue in [`library-issues.md`](../backlog/library-issues.md), and remove the
-issue when the library carries all of it.
+the **Status** of its issue in [`library-issues.md`](../backlog/library-issues.md). An issue the
+library carries all of is never removed: it stays in the table of the issues solved by descriptions,
+its **Status** says what the library carries.
 
 ### Step 4: Commit Changes
 

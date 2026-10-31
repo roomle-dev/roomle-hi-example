@@ -17,8 +17,8 @@ the same at <https://roomle-dev.github.io/roomle-hi-example/>. [Back to the over
 ## The start page
 
 The title "HOMAG Intelligence Examples" at the top left, and three square tiles in a row, each an
-image with its label: **HI Sales Configurator** (`hi-sc/`, the sign-in example), **nobilia
-Minifabrik** (`nobilia-minifabrik/`) and **Ligna Store** (<https://www.roomle.com/t/ligna-store/>).
+image with its label: **Sales Configurator** (`hi-sc/`, the sign-in example), **nobilia
+Minifabrik** (`nobilia-minifabrik/`) and **LIGNA Store** (<https://www.roomle.com/t/ligna-store/>).
 The tiles wrap on a narrow screen. The two example links and the images are relative to the page,
 so they work on the dev server at `/` and on GitHub Pages under `/roomle-hi-example/`.
 

@@ -114,14 +114,14 @@ a chat. The chat runs in the page.
 ### 3. The sign-in example
 
 It is published on GitHub Pages — open <https://roomle-dev.github.io/roomle-hi-example/> and choose
-**HI Sales Configurator**; you need only a browser. Or run it in the repository folder:
+**Sales Configurator**; you need only a browser. Or run it in the repository folder:
 
 ```bash
 npm install
 npm run start:sc
 ```
 
-The browser opens the start page `http://localhost:3300`; **HI Sales Configurator** opens the sign-in
+The browser opens the start page `http://localhost:3300`; **Sales Configurator** opens the sign-in
 page `http://localhost:3300/hi-sc/`. Enter the user and password of the HI
 server and, if your login has more than one backend, the backend ID; the library is optional when the
 backend has one, and for the chat

@@ -44,12 +44,12 @@ parameters:
 | Parameter | Effect |
 | --------- | ------ |
 | `chat` | `true` shows the AI Planning Assistant window and starts the chat with the model the launcher serves (the launcher appends it when it is started with a model) |
-| `backendId` | Selects the HI backend: its library, its plan and its additional catalogs (`/backends/list`) are the defaults; a backend the list does not have takes nothing of another one. Without it, the default preset |
+| `backendId` | Selects the HI backend: its library, its plan, its additional catalogs and its server URL (`overrideServerUrl`) of `/backends/list` are the defaults; a backend the list does not have takes nothing of another one. Without it, the default preset |
 | `library_id` | Overrides the backend's library |
 | `id` | Selects the plan loaded at startup, over the backend's plan; without both, the default plan |
 | `language` | Selects the HI and planner locale |
 | `user_right` | Accepts `Simple`, `Advanced`, or `Master` |
-| `server_url` | Overrides the Rubens UI server the planner is loaded from. Defaults to `https://www.roomle.com/t/bo-test/` |
+| `server_url` | Overrides the Rubens UI server the planner is loaded from, over the backend's `overrideServerUrl`. Defaults to `https://www.roomle.com/t/bo-test/` |
 
 The page also forwards the optional feature and debug query parameters used
 by the original presets demo. Browser developer tools expose the planner as

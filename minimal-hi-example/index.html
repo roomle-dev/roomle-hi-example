@@ -432,8 +432,8 @@
         option.textContent = presetName;
         presetSelect.appendChild(option);
       }
-      // The backend of the URL with its library and its plan; a backend the
-      // list does not have takes nothing of another backend.
+      // The backend of the URL with its library, its plan and its server URL; a
+      // backend the list does not have takes nothing of another backend.
       const queryBackendId = getQueryParam('backendId');
       const selectedPreset = queryBackendId
         ? presets[queryBackendId]
@@ -493,7 +493,10 @@
       const chatEnabled = getQueryParam('chat') === 'true' || modelProxy;
       const options = {
         id: getQueryParam('id') ?? selectedPreset?.planId ?? DEFAULT_PLAN_ID,
-        overrideServerUrl: getQueryParam('server_url') ?? DEFAULT_SERVER_URL,
+        overrideServerUrl:
+          getQueryParam('server_url') ??
+          selectedPreset?.overrideServerUrl ??
+          DEFAULT_SERVER_URL,
         customApiUrl: 'https://api.roomle.com/v2',
         moc: true,
         saveToIdb: true,

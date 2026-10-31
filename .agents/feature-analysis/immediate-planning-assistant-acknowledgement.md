@@ -1,4 +1,4 @@
-# An immediate acknowledgement for every Planning Assistant request
+# A short, prompt-specific opening response from the Planning Assistant
 
 > **Type**: Feature Analysis
 >
@@ -13,27 +13,34 @@
 
 **Affected repositories**
 
-- **roomle-ui**: the planner chat displays a translated acknowledgement while the accepted turn
-  has no assistant text; component tests and the chat documentation describe its lifecycle.
-- **roomle-hi-example**: this analysis and its indexes; on implementation, the example's chat
-  documentation explains the acknowledgement and its distinction from measured model output.
+- **roomle-ui**: the planner-owned system prompt asks the model for one brief sentence about the
+  user's requested action before detailed planning; prompt and stream tests and the behaviour
+  reference cover it.
+- **roomle-hi-example**: this analysis and its indexes; on implementation, the chat documentation
+  and an evaluated timing comparison describe the opening response and its effect on planning.
 
 ## Request and conclusion
 
-Every accepted prompt should receive a very short, visible response before the assistant spends
-time analysing the request, for example **“Got it. I'll work on your request.”** It should reassure
-the user that work has started, including on later turns and image-only requests.
+Every accepted prompt should receive a short response that shows what the assistant is about to
+do, before detailed planning. **The sentence must relate to the prompt.** A fixed receipt message
+does not satisfy this requirement. The recommendation is a model-generated opening sentence in
+the existing planning turn, with no separate acknowledgement model as the first approach.
 
-**This is possible without another model call.** The recommended design displays that sentence
-locally in the pending assistant bubble, then replaces it with the streamed assistant text. The
-assumption is that a generic acknowledgement satisfies the request's explicit preference for a
-simple message. It confirms receipt and processing; it does not claim that a model has already
-understood the details or inspected an image.
+| User prompt | Suitable opening response |
+|---|---|
+| “Move the cabinets to the left wall.” | “I'll move the cabinets to the left wall.” |
+| “Make the fronts white.” | “I'll make the cabinet fronts white.” |
+| “What does this kitchen cost?” | “I'll check the kitchen's price.” |
+| An image with no text | “I'll use your image to plan the furniture.” |
 
-A model can instead be instructed to say “I'll move the cabinets to the left wall” before calling
-tools. That provides a prompt-specific response, but it still waits for context acquisition and
-the model's first text. Prompting alone cannot guarantee a response before reasoning. This is a
-separate choice if a substantive restatement of the request is required.
+These are examples of intent, not templates selected by code. The model uses the user's language
+and the conversation when needed. For an ambiguous request it can announce a check or ask the
+necessary clarification; it must not invent an interpretation or imply that a change is complete.
+The image-only sentence must not claim to have identified details before inspecting the image.
+
+The first analysis incorrectly treats “simple” as permission to use a generic placeholder. This
+revision replaces that recommendation, including the one posted in
+[ticket comment 156768](https://roomle.atlassian.net/browse/RML-18303?focusedCommentId=156768).
 
 ## How the response works today
 
@@ -50,8 +57,8 @@ iframe ([architecture](https://github.com/roomle-dev/roomle-ui/blob/ed4244eec/.a
 | Stream output | Every `text-delta` is forwarded immediately; `tool-input-start` and `tool-call` set activity. Reasoning events are not rendered: [535–561](https://github.com/roomle-dev/roomle-ui/blob/ed4244eec/packages/embedding-lib/src/homag-intelligence/hi-planning-assistant.ts#L535-L561). The window is not buffering an already available answer. |
 | Finish | Text appends to the running entry; an error replaces it; `done` clears `busy`. Only successful model conversation messages enter host history: [store:82–116](https://github.com/roomle-dev/roomle-ui/blob/ed4244eec/src/common/store/planning-assistant-store.ts#L82-L116), [assistant:568–583](https://github.com/roomle-dev/roomle-ui/blob/ed4244eec/packages/embedding-lib/src/homag-intelligence/hi-planning-assistant.ts#L568-L583). |
 
-Consequently, the gap is an explicit acknowledgement in the conversation, beyond the existing
-working status. It is not a missing streaming transport.
+The missing behaviour is an early sentence about the requested action. Streaming already carries
+it if the model produces it early; the working status cannot substitute for its content.
 
 The retained Azure baselines illustrate the distinction: the text kitchen has first visible text
 at **13.328 / 13.309 seconds**, versus first generated model output at 2.883 / 1.698 seconds; the
@@ -65,46 +72,64 @@ loading as the dominant delay.
 
 ## Recommended design
 
-Render one translated sentence in the **last, running assistant entry** when `busy` is true,
-the entry is not failed and its text is empty. Derive it from existing state in
-`PlanningAssistantChat.vue`; keep the underlying `entry.text` empty. No new turn state or output
-part is needed.
+Start with the system prompt of the existing agent, in roomle-ui
+[`hi-agent-prompts.ts:13–21`](https://github.com/roomle-dev/roomle-ui/blob/ed4244eec/packages/web-sdk/packages/homag-intelligence/src/hi-agent-prompts.ts#L13-L21).
+Its current sentence, “Call tools instead of describing what you would do, then summarize what
+you changed”, discourages the requested opening. Replace that sentence coherently; do not append
+a conflicting instruction beside it. A candidate instruction is:
 
-- The acknowledgement is eligible for the next Vue render after `store.send` accepts the prompt,
-  independently of the host callback, context reads and provider response. Sending waits for any
-  pending image preparation today (`PlanningAssistantChat.vue:247–259`); the guarantee starts at
-  accepted submission, not at the beginning of that preparation.
-- The first nonempty text replaces the presentation fallback; subsequent deltas append normally.
-  Tool activity can update the existing status while the acknowledgement remains visible.
-- `done`, errors and lost availability remove the pending fallback. A tool-only completion must
-  not leave “I'll work on your request” as if work were still running. Each later accepted prompt
-  gets its own pending sentence; old empty entries never acquire it.
-- Account for the existing `v-memo`: pending visibility depends on `busy` and the running entry,
-  not just `entry.text`. Preserve the test that completed answers are not rerendered per delta.
-- Announce the acknowledgement accessibly once, without making every streamed token a live
-  announcement. Keep tool activity separate from this sentence.
+> At the start of each user turn, before detailed planning, write one short sentence in the
+> user's language saying what you will do for their request. Base it on the request and known
+> conversation only; leave layout decisions, measurements and product selection for later.
+> Then continue with the tools and summarize the confirmed result. Do not stop after the opening
+> sentence or repeat it before each tool call.
 
-This adds **zero model requests and zero model tokens**. It creates no conversation-history
-message, consumes no agent step and changes no tool execution. It improves visible responsiveness;
-it does not shorten kitchen generation. No keyword classifier or prompt-specific templates are
-needed for the stated requirement.
+This is a proposed instruction, not a measured result. The important ordering is **brief intent
+response → detailed planning and tools → confirmed result**, rather than a detailed plan followed
+by an introductory paragraph. An opening can be as short as six to twelve words; no fixed word
+count is needed in the API.
+
+Official [OpenAI reasoning guidance](https://developers.openai.com/api/docs/guides/reasoning)
+explicitly recommends asking for a short preamble before deeper reasoning to improve time to first
+visible text. This supports trying the existing model first. It does not establish a latency
+bound for the Azure deployment or every provider this application supports. The model must still
+receive the request and infer its intent; full context acquisition also precedes the call today.
+
+Keep the first sentence in the same model response as the subsequent work. Existing `text-delta`
+forwarding displays it immediately, while the turn remains busy. Do not emit `done` at the end of
+the sentence, force a text-only first step, or insert a synthetic assistant message. Genuine
+model output belongs to successful history through the existing `responseMessages` path.
+
+For Responses providers, verify intermediate message metadata survives the SDK and history path.
+The official guidance discusses preserving assistant `phase` for commentary versus final answers.
+The installed OpenAI adapter already reads message phase into text metadata and replays it
+(`openai-responses-language-model.ts`, `convert-to-openai-responses-input.ts`); this is evidence
+of adapter support, not a test of the complete Azure/proxy path. No new UI output type is required
+just to display the sentence.
+
+This proposal adds no separate model request or agent step when the opening and tool calls occur
+in the same response. It adds the sentence's output tokens and streaming time. Faster first text
+and unchanged planning quality must be demonstrated; neither follows from a prompt assertion test.
 
 RML-18303's existing [proposal B](../refactoring-analysis/planning-assistant-performance-next-steps.md#52-b--the-tool-call-before-the-narration)
 seeks to remove the model's 255–339-character planning preambles, whose streaming takes about
-1.4–2.1 seconds before the create payload. A local acknowledgement is compatible with that
-proposal: the user sees feedback even when the first model output is a tool call. The proposal is
-open work, not assumed implemented.
+1.4–2.1 seconds before the create payload. **Its zero-text-before-tools criterion conflicts with
+this feature.** Agree on the tradeoff: retain one early sentence about the requested action and
+avoid the longer concept narration. Do not apply both instructions simultaneously or count the
+opening sentence as faster kitchen creation. Proposal B is open work, not assumed implemented.
 
 ## Alternatives
 
 | Approach | Assessment |
 |---|---|
-| Keep only the current working status | Already immediate, but does not provide the requested conversational acknowledgement. |
-| Ask the planning model for one short opening sentence | Feasible as a best-effort prompt-specific alternative. Revise the existing “Call tools instead of describing what you would do” instruction in `hi-agent-prompts.ts` coherently, and ask for one acknowledgement per user turn followed by execution. Existing streaming carries it. It still depends on inference latency and adds narration before the tool call. |
+| Fixed local acknowledgement or cosmetic rewording | Rejected: does not demonstrate understanding of the prompt. |
+| Keep only the current working status | Already immediate, but does not provide the requested response. |
+| Prompt-specific templates selected by keywords | Rejected: another intent classifier, brittle for follow-ups, languages and ambiguous requests. The agent already interprets the prompt. |
 | Force a text-only first model step | A text-only response normally ends this tool loop; tools do not automatically run afterwards. A separate continuation would be required. Do not insert `toolChoice: 'none'` at step zero and expect planning to continue. |
-| A separate small or low-reasoning model for the acknowledgement | Can generate a short paraphrase from the prompt alone, but still has network/provider latency, additional cost and failure handling. Sequential execution delays planning; parallel execution introduces ordering and cancellation work. Excessive for a generic acknowledgement. |
-| Emit static `text` at the start of the host callback | Technically possible before the context reads, but `text` appends permanently to the answer and round-trips through the host. The planner owns translations and already knows when it accepts a turn. A local pending fallback is smaller and works for every host using this window. |
-| Show reasoning or synthesize progress from elapsed time | Neither provides reliable confirmation of actual progress. The existing tool activity remains useful, but arrives only when the model starts a tool call. |
+| Separate lightweight acknowledgement generation | A valid fallback if the same-model opening is still late. Give it the prompt and relevant recent conversation, no tools, catalog or planning rules; ask only for the intended action. Stream its sentence, then run the planner. This separates intent recognition from detailed planning, but adds a request, cost and potentially delay to the first kitchen. A fast model and its availability must be verified; using the same slow deployment does not establish a benefit. |
+| Run that extra generation concurrently with planning | Can avoid a sequential planning delay, but requires coordinated output order, failure and cancellation behaviour. Defer until timing shows the extra generation is needed. |
+| Reduce reasoning effort for the whole planner | Changes planning quality and the existing performance comparison. Not necessary to try an early opening; a separately generated opening could use lower reasoning where supported without weakening planning. |
+| Show reasoning or progress based on elapsed time | Does not supply the requested short action sentence. |
 
 The AI SDK documentation confirms that text, reasoning and tool events are distinct
 ([streaming](https://ai-sdk.dev/docs/ai-sdk-core/generating-text)), and that automatic multi-step
@@ -117,30 +142,37 @@ than copying current documentation's helper names.
 
 | Repository / files | Required scope |
 |---|---|
-| roomle-ui `src/common/components/PlanningAssistantChat.vue` | Pending acknowledgement, lifecycle, memo dependencies and accessible rendering. |
-| roomle-ui `src/common/translations/base.json` | One English source key. Per the [translation workflow](https://github.com/roomle-dev/roomle-ui/blob/ed4244eec/.agents/workflows/add-translation-keys.md), the owner syncs Loco; the app loads generated translations, so the sentence is not release-ready until that sync. |
-| roomle-ui `tests/integration/common/components/PlanningAssistantChat.spec.ts` | Render before a deliberately unresolved host callback; cover text and image-only prompts, later turns, tool activity, replacement and append, error, lost availability, and `done` without text. Verify no pending message returns on older entries; retain markdown/memo and scrolling coverage. |
-| roomle-ui `tests/unit/common/store/planning-assistant-store.spec.ts` | Existing guards and streaming lifecycle stay applicable. Assert that the acknowledgement remains absent from stored entries and the callback payload; no new acknowledgement state is required. |
-| roomle-ui `.agents/homag-intelligence/agent-architecture.md`, `packages/embedding-lib/docs/planning-assistant-overview.md` | Document local receipt feedback separately from agent output and final results. |
+| roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-agent-prompts.ts`, its `__tests__/hi-agent-prompts-test.ts` | Replace the conflicting sentence. Guard one prompt-specific opening per user turn, followed by execution and the result; retain existing planning and confirmed-result rules. |
+| roomle-ui `tests/unit/embedding-lib/homag-intelligence/hi-planning-assistant.spec.ts`, `hi-planning-azure.spec.ts` | Simulate opening text followed by a delayed tool call and final text. Verify early forwarding, a single completed turn, history and phase metadata; no extra model step introduced solely for an opening. |
+| roomle-ui `tests/integration/common/components/PlanningAssistantChat.spec.ts` | Verify streamed opening, tool activity, readable final text, busy state, errors and later turns. Existing renderer/store need no placeholder state. |
+| roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`, `agent-architecture.md`, `packages/embedding-lib/docs/planning-assistant-overview.md` | Document the prompt contract and distinguish opening intent from confirmed action. Reconcile proposal B before implementation. |
 | roomle-hi-example `docs/ai-chat.md`, `.agents/context/pages-chat-and-launcher.md` | Explain what the user sees and link to roomle-ui for implementation. |
+| roomle-hi-example `.agents/benchmarks/` and existing prompt-run tooling | Retain a controlled before/after comparison of the opening's content, first-text timing, first plan change and final result. No tracked suite change is needed just to select cases. |
 
-Success means the pending sentence appears on the next component update after an accepted send
-while the host/provider is still unresolved, then yields to real text or terminal state. Verify
-visually with a delayed host and with both direct-provider and model-proxy configurations; no paid
-model run is needed to prove the acknowledgement's timing or lifecycle. A healthy foreground
-browser should paint it promptly, but this analysis claims no measured millisecond bound.
+Success requires an opening tied to the actual prompt in the first model call, before tool use,
+with no detailed layout or product analysis in that sentence. Planning must then continue and
+complete. Evaluate creation, a specific edit, price enquiry, an ambiguous follow-up and an
+image-only turn, including multiple turns and the user's language. For an already short direct
+answer or necessary clarification, respond directly rather than adding a redundant promise.
 
-Keep `firstTextMs` as **first model text**, not acknowledgement latency. It is measured in the
-host's text-delta handler and excludes this local fallback. If acknowledgement latency is recorded,
-measure accepted send to rendered acknowledgement separately; retain first kitchen and final-answer
-timings so a faster placeholder cannot be reported as faster planning. The example's
-`window.hiPlanningAssistantOutput` records host output, not this local presentation.
+Existing `firstTextMs` measures the first model text and can measure this opening. Retain the
+content and time of the first text event, opening completion, first tool call, first successful
+plan change, total turn time and call count. Compare with the same prompts, provider, reasoning
+setting and source versions, at least two repetitions per case. Check content and completion as
+well as timing: an early sentence followed by no action fails. Mock stream tests establish
+forwarding and lifecycle, not model compliance or a latency improvement. No new paid runs are
+performed in this analysis; their scope and budget require the existing benchmarking workflow.
 
-The recommended feature needs a **planner deployment**, including completed translations; it needs
-no embedding-lib rebuild, consumer version bump, proxy route or new dependency. It changes neither
-the HI tools nor `glue-logic.ts`, library data or RoomleCore. The example's pinned embedding-lib
-and the inspected roomle-ui checkout are different versions; no deployed behaviour is inferred
-from the local checkout alone.
+A prompt-only implementation reaches the hosts through a **planner deployment** and a restarted
+assistant session, since prompts are fetched during setup. It needs no embedding-lib rebuild,
+consumer version bump, translation key or proxy route. If wire tests reveal a metadata defect,
+fixing that path is an additional scoped change. The separate-generation fallback would require
+embedding-lib orchestration and configuration, tests, consumer adoption and a suitable deployment
+or proxy model alias; the current single `planning` alias does not prove a second model exists.
+
+Neither proposal changes `glue-logic.ts`, the library's calculation or RoomleCore. The example's
+pinned embedding-lib and the inspected roomle-ui checkout are different versions; no deployed
+behaviour is inferred from the local checkout alone.
 
 This analysis uses source inspection, the ticket's discussion and attachment, retained benchmarks
 and official SDK documentation. Productive code, prompts and tests are unchanged; no new model

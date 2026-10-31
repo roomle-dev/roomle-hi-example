@@ -62,7 +62,7 @@ library cannot calculate.
 | 12 | [A worktop on the tall units from the group's countertop switch](#12-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — a worktop on top of the tall units |
 | 15 | [The shelf descriptor names no format](#15-the-shelf-descriptor-names-no-format) | HOMAG Furniture_Smith | HOMAG library development team | the desc names the default spacing; the actual format and example open | low — the number of adjustable shelves cannot be set, so "one more shelf" is not possible with adjustable shelves |
 | 21 | [The sink descriptions: a value desc with its pasted table row, and what None builds](#21-the-sink-descriptions-a-value-desc-with-its-pasted-table-row-and-what-none-builds) | HOMAG Furniture_Smith | HOMAG library development team | the sink descriptions done (1.1, 2.8); open: the desc of `Axia_Anthrazit_R`, `None` | low — the side rule and the reaches are in the library |
-| 23 | [The island back panel names no peninsula](#23-the-island-back-panel-names-no-peninsula) | HOMAG Furniture_Smith | HOMAG library development team | the desc proposed; not reported; the length attribute also in the tools' catalog: [analysis](../bug-analysis/kitchen-image-16-back-panel-length-and-wall-units-past-the-wall.md) | medium — the panel keeps its own length, the agent sends the group again |
+| 23 | [The island back panel names no peninsula](#23-the-island-back-panel-names-no-peninsula) | HOMAG Furniture_Smith | HOMAG library development team | the desc proposed; not reported; the desc of the length attribute planned: [analysis](../bug-analysis/kitchen-image-16-back-panel-length-and-wall-units-past-the-wall.md) | medium — the panel keeps its own length, the agent sends the group again |
 
 ### Not solved entirely by descriptions
 
@@ -1057,7 +1057,7 @@ panel docked back to back with a base unit of the row and as long as the row clo
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#18-island-back-panel),
 which names the peninsula and the length attribute.
 
-**Status.** The desc proposed; not reported to the library development team. The tools' catalog names `mod_Width` as the panel's dimension, which its module does not take — the cause of the wrong length in the create, analysed in [kitchen-image-16-back-panel-length-and-wall-units-past-the-wall.md](../bug-analysis/kitchen-image-16-back-panel-length-and-wall-units-past-the-wall.md); with that fix the agent sizes the panel right without this desc, which remains the reason to plan the panel for a peninsula at all.
+**Status.** The desc proposed; not reported to the library development team. The agent sizes the panel with `mod_Width`, the dimension the catalog serves from the library's template, and no desc of the library names `mod_IslandBackwallWidth` as the length — analysed in [kitchen-image-16-back-panel-length-and-wall-units-past-the-wall.md](../bug-analysis/kitchen-image-16-back-panel-length-and-wall-units-past-the-wall.md): the descs of the article and of the attribute are the fix.
 
 **Test.** `image-kitchen-16-peninsula`: the peninsula's back is closed by a panel along the whole
 row with the create.

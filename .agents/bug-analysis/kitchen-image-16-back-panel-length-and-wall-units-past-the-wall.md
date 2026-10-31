@@ -37,10 +37,11 @@ two places, and the agent needs a long time to correct it. Both plan snapshots h
 | Final `ps_te9s5i2rbyj8y577e4kmsils9p4u7j5` | The kitchen of the image; the wall units stand clear of the back wall and reach over the peninsula's corner | `RWV` with `mod_IslandBackwallWidth` 2031 and `mod_Depth` 250: 2061 mm long (x −670 to 1391), the whole back closed. Four `OTB45` wall units of 450 mm, two with an `ORFB60` open shelf unit under them, hung `above` the back `UTB60` of the leg at its front edge and chained toward the front: y 1154 to 2954. The 811 mm from there to the back wall, above the corner article, are empty, and the front unit hangs 89 mm past the peninsula's corner unit (y 1243). In the image the row ends at the back wall |
 
 The user's question: is the back panel's length a matter of the article's description, and is it
-hard for the agent to set or change the size? The answer of this analysis: the agent sets the
-length with the attribute the tools' own catalog names for the panel, and that attribute is the wrong
-one; changing the size is one call once the agent knows the right attribute. The wall units are an
-error of the agent's count that neither the instructions nor the result name.
+hard for the agent to set or change the size? Yes, it is the library's information: which attribute
+sets the panel's length is library content, and the tools serve every library without such knowledge
+(D8 and §2.4 of the behaviour reference). The desc of `RWV` and the desc of `mod_IslandBackwallWidth`
+have to say it; today neither does. Changing the size is one call once the agent knows the attribute.
+The wall units are an error of the agent's count that the instructions do not tell it to check.
 
 ## 2. Reproduction
 
@@ -125,8 +126,7 @@ The served rules tell the agent to size an article by exactly the id the dimensi
 > change-module-attribute with that attribute id, never its name, changes the size of a root module;
 > an article of another size - "a 900 mm cabinet" - is the same article with that attribute set …)
 
-So `mod_Width` on the panel is the agent following the catalog. Six of six runs and the user's first
-attempt send it.
+The agent follows the catalog: six of six runs and the user's first attempt send `mod_Width`.
 
 **Why the catalog names it.** `compactArticle` (roomle-ui `src/hi-plan-context.ts:625`) takes the
 dimensions of a root module from the attributes of the article template — the article as the glue
@@ -148,6 +148,12 @@ template's attributes, so it is not served.
 A scan over the 111 articles of the library (`dimension-scan.json`, [the evidence](#7-evidence)):
 `RWV` is the only article whose served dimensions name an attribute its module does not take. For
 every other article the dimensions are the module's own `mod_Width`, `mod_Depth` and `mod_Height`.
+
+The catalog serves the library's data as the template carries it. Which attribute sets the panel's
+length is library information, and the tools hold no knowledge of one library (§2.4 of the behaviour
+reference): the place for it is the desc of the article and of the attribute (4.3). Whether the
+catalog should leave out a template dimension the module does not take by the master data — a filter
+over the library's own module definition, no library knowledge — is an open decision of the plan.
 
 ### 4.2 The Useless Override Passes Without a Word
 
@@ -171,14 +177,20 @@ again — against the served rule that a size of a root module is a change made 
 `change-module-attribute` (`hi-mcp-server.ts:45`), because at that point it has lost trust in the
 group as built.
 
-### 4.3 The Desc of the Panel
+The library accepts the input without an error. The library's verdict is the measure of the tools
+(D107), so the tools do not judge an input the library accepts, and no feedback for it is proposed.
+
+### 4.3 The Descs of the Panel and of Its Length Attribute — the Root Cause
 
 The desc of `RWV` — "Decorative back panel for a kitchen island … island use only" — names no
 peninsula and no length attribute (library issue 23, the proposed desc in
 [suggested-library-changes.md 1.8](../../docs/library-information/suggested-library-changes.md#18-island-back-panel)).
-The earlier analysis made the skill ask for the panel, so it is planned; the desc still gives the
-agent no way to the length. It adds to 4.1; it is not the cause: an agent that reads
-`mod_IslandBackwallWidth` in the desc still sees `mod_Width` in the dimensions.
+The desc of `mod_IslandBackwallWidth`, "Width of the island backwall", says neither that it is the
+panel's length along the row nor that the panel's length is not `mod_Width`. The earlier analysis
+made the skill ask for the panel, so it is planned; nothing the library says leads the agent to the
+attribute that sizes it. Every desc is authoritative for the agent (D8): the descs of the article and
+of the attribute are where the library tells the agent which attribute is the length, and they are
+the fix.
 
 ### 4.4 The Wall Units Past the Window Wall
 
@@ -217,51 +229,35 @@ after the failure, and the same instruction covers it: fit the row to the leg, k
 
 ## 5. Proposed Fix
 
-All in roomle-ui, library-neutral, no guard. The ladder of
-[Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort): the catalog is the API the
-agent reads (step 2), the correction tells it what was not set (step 4), the skill sentence is the
-instruction (step 1).
+The length of the panel is the library's information: the descs. The wall units are an instruction:
+the image-planning skill. No tool change, no guard.
 
-1. **The catalog names the dimensions the module takes** (`compactArticle`,
-   `src/hi-plan-context.ts:653`). A `Dim` attribute of the template that the root's module does not
-   carry (master data `modules[].attributes`) is replaced by the module's `Dim` attribute of the same
-   name — "Width" for "Width     ", names trimmed — with the template's value, so `RWV` serves
-   `{ id: "mod_IslandBackwallWidth", name: "Width", value: "1000" }`; without such an attribute it is
-   left out. The agent then sends the right id in the first create, and `rootWidth`
-   (`src/hi-group-layout.ts:188`), which reads the catalog's `mod_Width` for the places of wall
-   units, keeps it for every article whose module takes it. Test in `__tests__/hi-plan-context-test.ts`
-   beside "should compact the article with module info, dimensions and attributes": a template
-   dimension the module does not carry is replaced by the module's dimension of the same name; one
-   without a namesake is left out; the module's own dimensions stay.
-2. **A root override no module of the root carries is left out and named.** In `checkRootOverrides`
-   (`src/hi-tool-attributes.ts:480`), before the library's verdict: an override whose attribute
-   neither the root's module nor a sub module of its article carries (the master data, as
-   `_overrideTargetsOf` reads it) is removed from the root, with the correction
-   "posGroups[0] root 'backPanel': a 'RWV' has no attribute mod_Width - the root was built without
-   it; the dimensions it takes: mod_Depth, mod_Height, mod_IslandBackwallWidth (Width)" — the
-   module's `Dim` attributes when the override is a `Dim`, else its attributes of the override's
-   type. The agent learns in the result what did not happen and which id to send, with
-   `change-module-attribute`, without losing a step. A new row in §8.3 of
-   `hi-tools-behaviour.md` and the decision in §3; tests in
-   `__tests__/hi-tool-commands/create-or-replace-groups-input-test.ts`: the override is not set, the
-   correction names the module's dimensions; an override a sub module carries stays (D100). The
-   command tools that take attributes (`merge-article-into-group`, `insert-article-into-group`,
-   `exchange-root-module`) are checked for the same path in the implementation.
-3. **The image-planning skill fits the wall units to the leg** (`src/hi-mcp/skills/image-planning/SKILL.md`,
+1. **The library names the length attribute** (`docs/library-information/suggested-library-changes.md`,
+   library issue 23): the desc of `RWV` (1.8, rewritten) says that its length along the row is
+   `mod_IslandBackwallWidth`, not `mod_Width`, set to the length of the row it covers; a new section
+   for `mod_IslandBackwallWidth` and `mod_IslandBackwallOverdimension` gives the attributes the same
+   information.
+2. **The image-planning skill fits the wall units to the leg** (`src/hi-mcp/skills/image-planning/SKILL.md`,
    section 3, one sentence): "A row of wall units is as long as the widths of its units: fit it to
    the floor units it hangs over — on a leg, to the stretch from the first floor unit it hangs over
    to the wall or the corner at the end of the leg — and keep its place in the image." The served-text
    fixture `packages/web-sdk/packages/test-helpers/unit/hi-mcp-fixture.json` is rewritten for it;
-   §5.6 of `hi-tools-behaviour.md` where it quotes the skill.
-4. **The library** keeps issue 23: the desc of `RWV` with the peninsula and the length attribute.
-   With fix 1 the agent sizes the panel right without it; the desc remains the reason to plan the
-   panel for a peninsula at all.
+   §5.6 of `hi-tools-behaviour.md` where it describes the skill.
+3. **The test** `image-kitchen-16-peninsula` of `docs/test-prompts.json` expects the wall units above
+   the floor units of their leg, none past a wall.
+
+Open decision: **the catalog's dimensions.** `compactArticle` could leave out a dimension of the
+template that the root's module does not take by the master data (`assignedAttributes`) — a filter
+over the library's own module definition, no knowledge of one library; `RWV` then serves depth and
+height, and the length comes from the descs. Without it the catalog keeps naming `mod_Width` 1000
+beside a desc that names `mod_IslandBackwallWidth`, and the agent has to weigh the desc over the
+dimension. The plan carries it as a step that waits for a go.
 
 Considered and not proposed:
 
-- **Correcting `mod_Width` into `mod_IslandBackwallWidth` by name** (step 3 of the ladder). With fix 1
-  the agent has the right id in the catalog; a name match in the tool is a guess the result would
-  have to explain, and the id the agent sent would differ from the id in the group it gets back.
+- **A correction or feedback for a root override the module does not carry.** The library accepts
+  the input without an error; the library's verdict is the measure (D107).
+- **Correcting `mod_Width` into `mod_IslandBackwallWidth` by name.** Library knowledge in the tool.
 - **A hint or guard for a root module past a wall of the room.** D22: a group outside the room is
   the user's choice; the hint for a create was rejected twice.
 - **A rule in the general served text.** The length of a row is a planning matter of the skills,
@@ -270,13 +266,13 @@ Considered and not proposed:
 ## 6. Verification
 
 - roomle-ui: the new and existing tests of `homag-intelligence`, typecheck, lint and format.
-- Model-free, on a dev server of the branch, the payload of the first attempt
-  (`replay-first-attempt.mjs`): the catalog serves `mod_IslandBackwallWidth` for `RWV`; the create's
-  corrections name `mod_Width` as not taken and the dimensions the panel takes; the same payload with
-  `mod_IslandBackwallWidth` 1800 closes the back in one create.
+- Model-free, the payload of the first attempt (`replay-first-attempt.mjs`) with
+  `mod_IslandBackwallWidth` 1800 in place of `mod_Width`: the back closed in one create — the final
+  snapshot shows the same.
 - The model check, when asked for: gpt-6-astra, the model of the issue, kitchen image 16 on the
-  default room, three runs on the dev server: the panel at the row's length in the first create, no
-  wall unit past the wall, the chat time against the 93 to 116 s of 2026-10-30.
+  default room, three runs on a dev server of the branch: no wall unit past the wall; the panel at
+  the row's length in the first create once the library carries the descs; the chat time against the
+  93 to 116 s of 2026-10-30.
 
 ## 7. Evidence
 

@@ -14,6 +14,7 @@ The repository root is an npm workspace root over `minimal-hi-example` and `hi-s
 | root | `start:sc` | the Vite dev server of the sign-in example (`hi-sc-example/`, :3300) |
 | root | `test` | the tests of every workspace: the launcher (`minimal-hi-example/tests/`, `node --test`) and the sign-in example (`hi-sc-example/tests/`) |
 | root | `plan:mistral`, `plan:gpt5`, `plan:gpt5.4`, `plan:gpt6` | the launcher with a chat model and its key from the environment |
+| root | `dev:proxy`, `deploy:proxy` | the demo proxy (`minifabric-example/proxy-server/`): the local run on :8080, the deployment to the Cloud Function ([Demo proxy](./demo-proxy.md)) |
 | root | `format`, `format:check`, `lint`, `lint:fix` | Prettier, oxlint |
 
 The chat of the example page loads the embedding-lib and the AI SDK from unpkg and esm.sh in the

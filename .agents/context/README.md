@@ -24,6 +24,7 @@ deploy it in [setup](../../docs/setup/).
 | [Pages, chat and launcher](./pages-chat-and-launcher.md) | `start.mjs`, the chat of the example page |
 | [HI sign-in example](./hi-sc-example.md) | `hi-sc-example/`: the planner with its chat in TypeScript behind a sign-in page |
 | [Sales portal example](./df-sales-portal-sc-example.md) | `df-salesPortal_sc-example/`: the sales configurator page of the df-salesPortal with the AI Planning Assistant on the model proxy of the HI server |
+| [Demo proxy](./demo-proxy.md) | `minifabric-example/proxy-server/`: the Cloud Function `proxy_request` that forwards the requests of the Roomle demos to HOMAG and Azure AI Foundry; running it locally, deploying it |
 | [Scripts and testing](./deployment-and-testing.md) | The workspaces and scripts, the unit tests, the end-to-end test runs |
 
 ## The example
@@ -41,6 +42,7 @@ deploy it in [setup](../../docs/setup/).
 | ------- | ---------- | ---- | ---- |
 | Example page (static files, the model of its chat) | `npm start` (`minimal-hi-example/start.mjs`) | 3000 (`EXAMPLE_PORT`) | `minimal-hi-example/index.html` |
 | Sign-in example (Vite dev server) | `npm run start:sc` | 3300 | `hi-sc-example/` |
+| Demo proxy (Functions Framework, local run) | `npm run dev:proxy` | 8080 | `minifabric-example/proxy-server/` |
 
 ## Repository map
 
@@ -50,6 +52,7 @@ deploy it in [setup](../../docs/setup/).
 | `minimal-hi-example/start.mjs` | The launcher: static serving, the model of the chat at `/planning-assistant-config.json` |
 | `hi-sc-example/` | The sign-in example in TypeScript: the HI server login, backend, library and the chat model entered on the page |
 | `df-salesPortal_sc-example/index.html` | The sales portal example: plain JavaScript, the planner with prices and the order, the planning assistant on the model proxy of the HI server |
+| `minifabric-example/proxy-server/` | The demo proxy: the Cloud Function `proxy_request`, deployed with `npm run deploy:proxy` |
 | `.agents/scripts/run-hi-mcp-prompt.js`, `run-hi-mcp-tests.js` | End-to-end runs of prompts through the chat of the example page in a headless planner |
 | `docs/test-prompts.json` | The end-to-end test cases |
 

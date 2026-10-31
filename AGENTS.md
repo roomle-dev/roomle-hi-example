@@ -80,6 +80,7 @@ roomle-hi-example is a demonstration and development environment for:
 
 1. **HI Presets Example** — A standalone HTML page (`index.html`) that demonstrates HOMAG Intelligence (HI) room planning with preset configurations, with the AI chat of the roomle-ui embedding-lib: its planning assistant (`startPlanningAssistant`) runs the HI MCP tools (`createHiMcpTools`) in the page
 2. **HI Sign-in Example** (`hi-sc-example/`) — the same planner with its chat in TypeScript (Vite), behind a sign-in page where the HI server login, backend ID, library, and the provider, model and API key of the chat are entered ([`.agents/context/hi-sc-example.md`](./.agents/context/hi-sc-example.md))
+3. **Demo Proxy** (`minifabric-example/proxy-server/`) — the Cloud Function `proxy_request` that forwards the requests of the Roomle demos to HOMAG and Azure AI Foundry; `npm run dev:proxy` runs it locally, `npm run deploy:proxy` deploys it ([`.agents/context/demo-proxy.md`](./.agents/context/demo-proxy.md))
 
 The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) provides:
 - Static file serving for the example HTML page on port 3000
@@ -99,6 +100,8 @@ The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) prov
 │   └── tests/                  # Unit tests (Node test runner)
 ├── df-salesPortal_sc-example/  # Sales portal example: the df-salesPortal page, the chat on the model proxy of the HI server
 │   └── index.html              # Single file, inline JS (.agents/context/df-sales-portal-sc-example.md)
+├── minifabric-example/
+│   └── proxy-server/           # The demo proxy, Cloud Function proxy_request: index.js, package.json (.agents/context/demo-proxy.md)
 ├── package.json                  # Project metadata and scripts
 ├── README.md                     # Quickstart and usage guide
 ├── AGENTS.md                     # This file - AI assistant instructions

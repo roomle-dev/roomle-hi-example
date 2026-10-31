@@ -16,7 +16,7 @@ the [store chat](#1-the-store-chat); the example pages need a terminal.
 
 - [What you can do](#what-you-can-do)
 - [How it works](#how-it-works)
-- [Three ways to use it](#three-ways-to-use-it)
+- [Four ways to use it](#four-ways-to-use-it)
 - [Talking to the assistant](#talking-to-the-assistant)
 - [Example prompts](#example-prompts)
 - [What to expect](#what-to-expect)
@@ -67,13 +67,14 @@ you ──> AI assistant ──> HI planning tools ──> your open planner tab
 - Every change happens in the planner tab you have open. **Keep that tab open** while you work with
   the assistant.
 
-## Three ways to use it
+## Four ways to use it
 
 | Way | You need | Best for |
 | --- | -------- | -------- |
 | [1. The store chat](#1-the-store-chat) | a browser and an API key for the chat model | trying it out, demos |
 | [2. The example page with its chat](#2-the-example-page-with-its-chat) | the repository, Node.js and an API key | developers, demos with other models |
 | [3. The sign-in example](#3-the-sign-in-example) | the repository, Node.js, the HI server login and an API key | demos where the login and the model are entered on the page |
+| [4. The minifabric example](#4-the-minifabric-example) | a browser | demos with the nobilia library, without a login or an API key |
 
 Ask the team that runs the HI MCP for the API key of a chat model.
 
@@ -112,15 +113,16 @@ a chat. The chat runs in the page.
 
 ### 3. The sign-in example
 
-It is published on GitHub Pages — open <https://roomle-dev.github.io/roomle-hi-example/>; you need
-only a browser. Or run it in the repository folder:
+It is published on GitHub Pages — open <https://roomle-dev.github.io/roomle-hi-example/> and choose
+**Sales Configurator**; you need only a browser. Or run it in the repository folder:
 
 ```bash
 npm install
 npm run start:sc
 ```
 
-The browser opens `http://localhost:3300` with a sign-in page. Enter the user and password of the HI
+The browser opens the start page `http://localhost:3300`; **Sales Configurator** opens the sign-in
+page `http://localhost:3300/hi-sc/`. Enter the user and password of the HI
 server and, if your login has more than one backend, the backend ID; the library is optional when the
 backend has one, and for the chat
 select the provider and enter the exact model ID and its API key. **Start planning** opens the planner; the button at the bottom opens the
@@ -131,6 +133,20 @@ visit. Each field can also be prefilled by a query parameter of its name, for ex
 `?backendId=<backend-id>&libraryId=<library>`; other query parameters go to the planner, for example
 `id=<plan-id>` for a saved plan or `language=de-DE`. More in the
 [README of the example](../../hi-sc-example/README.md).
+
+### 4. The minifabric example
+
+It is published on GitHub Pages — open <https://roomle-dev.github.io/roomle-hi-example/> and choose
+**nobilia Minifabrik**. Or run it in the repository folder with `npm run start:sc` and
+choose it on the start page (`http://localhost:3300/nobilia-minifabrik/`).
+
+The planner opens with the library `nobilia_Minifabrik`. It
+needs no login and no API key: the library, the prices and the chat (`gpt-6-astra`) go through
+Roomle's demo proxy, which holds the credentials. To test with your own credentials, enter the API
+key, library, subscription and endpoint in the settings panel on the left and press **Reload**.
+**Generate with AI** plans a kitchen with the AI kitchen generation, **Load layout** loads an article
+layout file, and the button at the bottom of the planner opens the chat. More in the
+[README of the example](../../minifabric-example/README.md).
 
 ## Talking to the assistant
 

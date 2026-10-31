@@ -1,0 +1,21 @@
+{
+  "name": "minifabric-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "HI example with the nobilia_Minifabrik library through the demo proxy, the AI kitchen generation and the AI chat of the embedding-lib",
+  "scripts": {
+    "dev": "vite --port 3400 --open",
+    "build": "tsc && vite build",
+    "preview": "vite preview --port 3400",
+    "typecheck": "tsc",
+    "test": "node --experimental-strip-types --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@roomle/embedding-lib": "0.0.0-dev-4c2797a"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
+  }
+}

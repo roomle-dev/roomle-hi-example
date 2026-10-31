@@ -29,13 +29,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build the sign-in example
-        run: npm run build:pages --workspace hi-sc-example
+      - name: Build the start page with the examples
+        run: npm run build:pages --workspace pages
 
       - name: Upload the build
         uses: actions/upload-pages-artifact@v5
         with:
-          path: hi-sc-example/dist
+          path: pages/dist
 
       - name: Deploy to GitHub Pages
         id: deployment

@@ -11,7 +11,7 @@ developers who change or deploy it. [Back to the overview](./README.md).
 | --- | --- |
 | URL | `https://europe-west3-rml-showcases.cloudfunctions.net/proxy_request` |
 | Function | `proxy_request`, GCP project `rml-showcases`, region `europe-west3`, Node.js 20, HTTP trigger, unauthenticated |
-| Callers | the default `HOMAG_INTELLIGENCE_ENDPOINT` of the embedding-lib (roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-utils.ts`) and the HI examples of roomle-ui, the `nobilia-web-sdk-demo` of roomle-dev.github.io, and bo-api-tc-emulator |
+| Callers | the default `HOMAG_INTELLIGENCE_ENDPOINT` of the embedding-lib (roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-utils.ts`) and the HI examples of roomle-ui, the [minifabric example](./minifabric-example.md) of this repository, the `nobilia-web-sdk-demo` of roomle-dev.github.io, and bo-api-tc-emulator |
 
 ## Files
 
@@ -23,7 +23,7 @@ developers who change or deploy it. [Back to the overview](./README.md).
 
 `proxy-server/` is the deployment unit: `deploy:proxy` uploads the folder as it is in the checkout,
 and the build of the function installs the dependencies of its `package.json`. The folder is no
-workspace of the repository root.
+workspace; it sits in the workspace of the minifabric example, whose build leaves it out.
 
 ## What it forwards
 

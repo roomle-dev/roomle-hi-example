@@ -1,0 +1,17 @@
+{
+  "name": "hi-example-shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The code the HI examples share: the planner basics and the price request",
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "node --experimental-strip-types --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@roomle/embedding-lib": "0.0.0-dev-4c2797a"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}

@@ -93,6 +93,8 @@ Living reference of the implementation: how the code is built today. Full index 
 | [hi-mcp-server.md](context/hi-mcp-server.md) | The example page: architecture, running, a demo walkthrough, example prompts, troubleshooting |
 | [pages-chat-and-launcher.md](context/pages-chat-and-launcher.md) | `start.mjs`, the chat of the example page |
 | [deployment-and-testing.md](context/deployment-and-testing.md) | The workspaces and scripts, the unit tests, the end-to-end test runs |
+| [minifabric-example.md](context/minifabric-example.md) | `minifabric-example/`: the nobilia library through the demo proxy, the settings panel, prices and orders, the AI kitchen generation, the chat; the code shared with the sign-in example |
+| [start-page.md](context/start-page.md) | `pages/`: the start page of the TypeScript examples on :3300 and on GitHub Pages, its dev server and its build |
 | [demo-proxy.md](context/demo-proxy.md) | The demo proxy `proxy_request` in `minifabric-example/proxy-server/`: what it forwards, its configuration, running it locally, deploying it |
 | [roomle-ui HOMAG Intelligence guideline](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence.md) | In roomle-ui: the HI tools, the planning assistant and the chat window — the architecture, the behaviour reference, the tool reference, the tool executors, layout and placement, library errors, coordinate systems, interior fittings |
 

@@ -4,7 +4,7 @@ Standalone HI presets example (one `minimal-hi-example/index.html`) with the AI 
 embedding-lib: its planning assistant runs the HI tools in the page, and an AI agent plans HOMAG
 Intelligence object groups in a live Roomle room-planner session.
 
-New to the HI MCP? The [user guide](./docs/user-guide/README.md) explains what it does, the three
+New to the HI MCP? The [user guide](./docs/user-guide/README.md) explains what it does, the four
 ways to use it, and how to talk to the assistant. How it is built — the processes, modules,
 protocols and conventions — is in the [implementation documentation](./.agents/context/README.md).
 
@@ -66,16 +66,29 @@ Details: [AI chat](./docs/ai-chat.md) ·
 
 [`hi-sc-example/`](./hi-sc-example/README.md) is the planner with its chat in TypeScript, behind a
 sign-in page: the user and password of the HI server, the backend ID, the library, and the provider,
-model and API key of the chat are entered on the page instead of the command line. It is published
-on GitHub Pages: <https://roomle-dev.github.io/roomle-hi-example/>
+model and API key of the chat are entered on the page instead of the command line.
+
+## Minifabric example (TypeScript)
+
+[`minifabric-example/`](./minifabric-example/README.md) is the planner with the library
+`nobilia_Minifabrik` through Roomle's demo proxy: a settings panel for your own testing
+credentials, prices, orders, the AI kitchen generation and the AI chat. The demo proxy itself is in
+[`minifabric-example/proxy-server/`](./minifabric-example/proxy-server/README.md).
+
+## Start page
+
+`npm run start:sc` opens the start page on :3300 with the links to the two TypeScript examples and
+the ligna-store: the sign-in example at <http://localhost:3300/hi-sc/>, the minifabric example at
+<http://localhost:3300/nobilia-minifabrik/>.
 
 ```bash
 npm install
-npm run start:sc     # Vite dev server on :3300, opens the sign-in page
+npm run start:sc
 ```
 
-A push to the branch `release/pages` publishes it to GitHub Pages
-(`.github/workflows/deploy.yml`).
+A push to the branch `release/pages` publishes the same to GitHub Pages:
+<https://roomle-dev.github.io/roomle-hi-example/> (`.github/workflows/deploy.yml`,
+[start page](.agents/context/start-page.md)).
 
 ## Ask the agent
 

@@ -149,7 +149,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 |---|---|---|
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 | [The AI image chat through the model proxy of the HI server](feature-analysis/ai-rendering-through-the-model-proxy.md) | Open — RML-18350 | 2026-10-30 |
-| [A short, prompt-specific opening response from the Planning Assistant](feature-analysis/immediate-planning-assistant-acknowledgement.md) | Open | 2026-10-31 |
+| [A short, prompt-specific opening response from the Planning Assistant](feature-analysis/immediate-planning-assistant-acknowledgement.md) | Implemented on a local branch; pending landing | 2026-10-31 |
 
 ### Refactoring Analyses
 
@@ -169,6 +169,9 @@ folder of the same name.
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Opening response comparison and validation](benchmarks/planning-assistant-opening-comparison.md) | Measured — paired first-text timing and 16 successful live turns, with provider-latency limits | 2026-10-31 |
+| [Opening response candidate](benchmarks/planning-assistant-opening-candidate.md) | Measured — twelve candidate turns, source versions, saved plans and per-request timing/bytes | 2026-10-31 |
+| [Opening response baseline](benchmarks/planning-assistant-opening-baseline.md) | Measured — unchanged feat/hi-planning-assistant base, paired fixtures and pinned embedding-lib | 2026-10-31 |
 | [Benchmark 14: left-wall image kitchen, the create calculating first and loading once](benchmarks/14-iklw-az-load-2026-10-29.md) | Failed and rejected: the image turn 10.7 s later than the baselines in the mean; reverted | 2026-10-29 |
 | [Benchmark 14: walnut text kitchen, the create calculating first and loading once](benchmarks/14-fkwm-az-load-2026-10-29.md) | Failed and rejected: the walnut kitchen 1.1 s later than the baselines in the mean; reverted | 2026-10-29 |
 | [The create replayed without a model](benchmarks/replay-create-loads-2026-10-29.md) | Measured; reverted — the create tool 1.0 to 1.4 s faster model-free, the turn not faster in benchmark 14 | 2026-10-29 |

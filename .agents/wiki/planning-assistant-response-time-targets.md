@@ -30,6 +30,13 @@ needs to interpret the image.
 
 ## What the milestones mean
 
+- **Opening response** — the model's first short sentence about the requested action. The
+  assistant's `firstTextMs` measures its first emitted text delta from the host callback, which
+  does not establish a painted chat frame. The prompt asks for an opening before detailed
+  planning; provider latency still applies. It is measured separately from the first kitchen and
+  final result, with no numeric response-time target established for it.
+  The [opening-response comparison](../benchmarks/planning-assistant-opening-comparison.md)
+  records first text separately from completed planning and documents provider-latency limits.
 - **First kitchen in the plan** — the planner shows the first kitchen of the turn: the first
   successful `create-or-replace-groups` has completed. The benchmarks report it as "First
   successful kitchen create completed (turn start)"; the reports of "test the mcp" as the

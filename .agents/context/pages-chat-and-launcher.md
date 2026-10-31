@@ -78,6 +78,13 @@ backend — the page sets `featureFlags.planningAssistant` in the planner option
    `onPlanningAssistantPrompt` and runs every turn with `streamText` (at most 16 steps, the last
    without tools).
 
+The planner-owned system prompt asks for one short opening about the requested action, in the
+user's language, before detailed planning, followed by tools and a confirmed result. The opening
+uses the ordinary text stream; it has no separate model call or output part. Simple answers and
+necessary clarifications are direct. The host fetches the prompt during setup, so an updated
+planner prompt reaches a restarted assistant session. The implementation and contract are in
+[roomle-ui](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/agent-architecture.md#2-the-turn-runs-in-the-host).
+
 `recordedPlannerApi` is the planner API the planning assistant runs on: a proxy of
 `roomDesignerApi.extended` that records every tool call the planner runs
 (`callExternalObjectAgentTool`) in `window.hiPlannerCalls` (`id`, `tool`, `input`, `ms`, `ok`,

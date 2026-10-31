@@ -2,7 +2,7 @@
 
 > **Type**: Feature Analysis
 >
-> **Status**: Open
+> **Status**: Implemented on a local branch; pending merge and planner deployment
 >
 > **Date**: 2026-10-31
 >
@@ -42,7 +42,7 @@ The first analysis incorrectly treats “simple” as permission to use a generi
 revision replaces that recommendation, including the one posted in
 [ticket comment 156768](https://roomle.atlassian.net/browse/RML-18303?focusedCommentId=156768).
 
-## How the response works today
+## How the response worked at the analysed base
 
 The example delegates the conversation to the embedding-lib's `startPlanningAssistant`; it does
 not implement a separate agent or chat renderer. The chat window and its store run in the planner
@@ -70,7 +70,7 @@ not a new measurement or a forecast for every provider. Pre-turn page setup is s
 context acquisition in those runs is about 20 ms, so the source trace does not establish context
 loading as the dominant delay.
 
-## Recommended design
+## Selected design
 
 Start with the system prompt of the existing agent, in roomle-ui
 [`hi-agent-prompts.ts:13–21`](https://github.com/roomle-dev/roomle-ui/blob/ed4244eec/packages/web-sdk/packages/homag-intelligence/src/hi-agent-prompts.ts#L13-L21).
@@ -174,6 +174,35 @@ Neither proposal changes `glue-logic.ts`, the library's calculation or RoomleCor
 pinned embedding-lib and the inspected roomle-ui checkout are different versions; no deployed
 behaviour is inferred from the local checkout alone.
 
-This analysis uses source inspection, the ticket's discussion and attachment, retained benchmarks
-and official SDK documentation. Productive code, prompts and tests are unchanged; no new model
-experiment is performed.
+The pre-implementation investigation used source inspection, the ticket's discussion and
+attachment, retained benchmarks and official SDK documentation. It changed no productive code,
+prompts or tests and performed no new model experiment.
+
+## Implementation and validation
+
+roomle-ui commit `d13592675f0bd2e750fc6a429ad4927f4ca64cac`, on
+`feat/planning-assistant-opening-response`, implements the prompt replacement directly on
+`feat/hi-planning-assistant` at `ed4244eec`. The existing stream and agent loop carry the opening;
+no separate model, output part, embedding build or consumer version change was needed. The
+guarding prompt, stream/history, real pinned-adapter and component tests passed: eight SDK tests
+and 76 targeted unit/integration tests. Desktop and mobile form checks with intercepted model
+fixtures passed without live model calls.
+
+The [comparison](../benchmarks/planning-assistant-opening-comparison.md) records all sixteen
+successful live turns and 5,908,683 input tokens. In two repetitions per paired case, mean first
+text changed from 17.855 to 3.818 seconds for the text kitchen and from 12.934 to 4.788 seconds
+for the image kitchen, with the same three/seven model calls. Image-only and German edit, price
+and clarification checks also passed the opening/continuation criteria. Photo fidelity remained
+partial where the library could not build requested finishes or a backsplash; the answers
+disclosed the omissions. One edit waited 11.048 seconds before first text, so an immediate
+response for every request was not established. A second generator remains an unimplemented
+alternative requiring its own justification.
+
+Full documentation lint did not pass. The same 22 UI TypeDoc warnings and two SDK TypeDoc type
+errors were reproduced on the unchanged required base under the installed dependencies. Type,
+code and flag checks passed; no unrelated warning suppression or fixes were applied.
+
+The durable contract is documented in roomle-ui's behaviour reference (D131), architecture and
+embedding overview, and in this repository's [chat guide](../../docs/ai-chat.md) and
+[host reference](../context/pages-chat-and-launcher.md). This analysis is retained until the
+implementation lands; the planner deployment and restarted chat session are still outstanding.

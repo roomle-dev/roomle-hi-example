@@ -17,8 +17,8 @@ the numbered issues of [`mcp-issues.md`](../backlog/mcp-issues.md),
 [`library-issues.md`](../backlog/library-issues.md) and
 [`mcp-test-infrastructure-issues.md`](../backlog/mcp-test-infrastructure-issues.md), a README row, or
 a document of their own. A library issue keeps the parts still open in the library; its **Status**
-says what the library already carries of it, and the issue leaves the backlog when the library
-carries all of it. The exact `desc` text proposed to the library is in
+says what the library already carries of it. An issue the library carries all of is never removed:
+it stays in the table of the issues solved by descriptions. The exact `desc` text proposed to the library is in
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md), which
 keeps every suggested change, applied in the library or not — set the status of a change there when
 the library applies it, never delete it. Each item carries:

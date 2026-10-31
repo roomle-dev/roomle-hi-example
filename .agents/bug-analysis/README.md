@@ -38,9 +38,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 ## Current Documents
 
-| Document | Status | Description |
-|---|---|---|
-| [kitchen-image-16-back-panel-length-and-wall-units-past-the-wall.md](kitchen-image-16-back-panel-length-and-wall-units-past-the-wall.md) | Open | RML-18346: the back panel `RWV` at its own length — the agent sizes it with `mod_Width`, the dimension the catalog serves from the library's template, while its length is `mod_IslandBackwallWidth`, which no desc of the library names; the wall units of a leg counted past the window wall, which the instructions do not tell the agent to check and the result may not warn about (D22) |
+No bug analysis is open.
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

@@ -28,6 +28,13 @@ Supported providers: **Azure OpenAI** (`azure`), **OpenAI** (`openai`), **Mistra
 **Anthropic (Claude)** (`anthropic`), **Google (Gemini)** (`google`), any OpenAI-compatible endpoint
 (`openai-compatible`) and, without a model, the [model proxy](#the-model-proxy) of the HI server.
 
+The planner's prompt asks the model to begin a planning turn with one short sentence about the
+requested action, in the user's language, before detailed planning. It streams through the same
+answer as the later confirmed result, while tools run in between. Simple answers and necessary
+clarifications are direct. The time until that opening arrives depends on the model and provider;
+it is separate from the first change to the plan and the completed answer. The prompt comes from
+the planner when the chat starts, so a planner prompt update needs a new chat session.
+
 ## Running it
 
 ```bash

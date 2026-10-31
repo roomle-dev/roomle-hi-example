@@ -10,6 +10,7 @@ import {
   HI_ROOT_TAGS,
   SERVER_URL,
   externalObjectSettings,
+  importOrder,
   requestPrice,
 } from '../../shared/src/hi-planner.ts';
 import { hiProxyBaseUrl, type HiBackend } from './hi-server.ts';
@@ -45,6 +46,8 @@ export const startPlanner = async (
   await setupHi(hiOptions, {
     onFetchPrice: (orderData: unknown) =>
       requestPrice(hiOptions, orderData, { Authorization: authorization }),
+    onPlaceOrder: (order: unknown) =>
+      importOrder(hiOptions, order, { Authorization: authorization }),
   });
   const planner = await RoomleEmbeddingApi.createPlanner(
     EMBEDDING_ID,
@@ -56,7 +59,6 @@ export const startPlanner = async (
       moc: true,
       locale: LANGUAGE,
       autoStart: true,
-      elements: { bottom_bar: false },
       featureFlags: {
         globalCallbacks: false,
         openCloseAnimation: true,
@@ -75,6 +77,10 @@ export const startPlanner = async (
       ...queryOptions,
     }
   );
+  // Add to Cart sends the plan with its prices to the order manager
+  planner.ui.callbacks.onRequestPlan = async () => {
+    await planner.extended.placeOrder(true);
+  };
   if (chat) {
     await startPlanningAssistant(planner, chat, new AbortController().signal);
   }

@@ -52,7 +52,8 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 3. **Planner** (`planner.ts`, `startPlanner`): `setupHi` with the HI proxy (`hiProxyBaseUrl`:
    `proxy_request?backendId=…`, or `proxy_request?url=…` without a backend ID, where the proxy uses
    the backend of the user; an empty `backendId=` is answered with 401) and the Basic authorization — `setupHi` loads the article catalog,
-   master data and calc script itself, the page adds `onFetchPrice` for the prices —, then
+   master data and calc script itself, the page adds `onFetchPrice` for the prices and
+   `onPlaceOrder` for the order ([Save Draft and Add to Cart](#save-draft-and-add-to-cart)) —, then
    `createPlanner` and, with a model, `startPlanningAssistant` of the embedding-lib. Every query
    parameter that is not a field of the form goes to `createPlanner` and overwrites the option of
    its name (`query-options.ts`, `plannerQueryOptions`): `true`, `false` and numbers are converted
@@ -67,8 +68,8 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 | `hi-sc-example/src/fields-cookie.ts` | `storedFields`, `fieldsCookie`: the sign-in fields in the cookie |
 | `hi-sc-example/src/hi-server.ts` | `BACKEND_IDS`, `hiProxyBaseUrl`, `fetchBackend`, `resolveLibraryId`, `modelProxyConfig` |
 | `hi-sc-example/src/model-config.ts` | `planningAssistantConfig`: provider, model ID and key → the `PlanningAssistantConfig` of the embedding-lib |
-| `hi-sc-example/src/planner.ts` | `startPlanner`: HI setup, planner, planning assistant |
-| `shared/src/hi-planner.ts` | the planner basics and the price request, shared with the minifabric example ([Shared code](./minifabric-example.md#shared-code)) |
+| `hi-sc-example/src/planner.ts` | `startPlanner`: HI setup, planner, Add to Cart, planning assistant |
+| `shared/src/hi-planner.ts` | the planner basics and the price request, shared with the minifabric example ([Shared code](./minifabric-example.md#shared-code)), and the order import `importOrder` |
 | `hi-sc-example/src/query-options.ts` | `plannerQueryOptions`: the query parameters other than the form fields → planner options |
 | `hi-sc-example/src/style.css` | the sign-in page; the planner fills the window |
 | `hi-sc-example/tests/model-config.test.ts` | the unit tests of `planningAssistantConfig` |
@@ -87,9 +88,25 @@ the server URL `https://www.roomle.com/t/bo-test/`, the catalog root tags, the
   from the Roomle API, gets 403 and stays on "Loading catalog…" — see "Internal Catalog UI" in
   roomle-ui `packages/embedding-lib/docs/homag-intelligence-embedding.md`.
 - **Left out** against `minimal-hi-example/index.html`: the preset dropdown, the debug panel, the
-  order buttons and the price display, the query parameter `server_url` (here `overrideServerUrl`),
+  page's order buttons (the planner's Add to Cart sends the order) and the price display, the query parameter `server_url` (here `overrideServerUrl`),
   the `dragIn` plugin, `saveToIdb`, and the page globals of the test scripts (`window.instance`,
   `window.hiPlannerCalls`, …). The end-to-end test scripts run against the minimal example only.
+
+## Save Draft and Add to Cart
+
+The planner shows its bottom bar with **Save Draft** and **Add to Cart**: the page sets no
+`elements.bottom_bar` and no `buttons`, so the planner's defaults apply, and the tenant settings of
+the embedding ID hide neither.
+
+- **Save Draft** keeps the planner's default: its save-draft dialog.
+- **Add to Cart** does what "Send to OM" with "With price" does in roomle-ui
+  `hi-presets-example.ts`. The planner saves the plan and calls `ui.callbacks.onRequestPlan`, which
+  runs `extended.placeOrder(true)`: the HI module prices the order data through `onFetchPrice` and
+  hands the order to `onPlaceOrder`. `importOrder` (`shared/src/hi-planner.ts`) posts it to
+  `/api/orderManager/orders/import` of the order manager with the sign-in's authorization, reads
+  the import status `/api/orderManager/orders/import/<correlationId>` when the answer has a
+  correlation ID, and logs the answer (`ORDER-RESPONSE`), the status (`IMPORT-STATUS`) and the link
+  of the order (`OrderManager Order: <link>`) to the browser console — the page has no log panel.
 
 ## The chat model
 

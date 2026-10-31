@@ -82,7 +82,9 @@ only the model.
 share: the embedding ID, the planner's server `https://www.roomle.com/t/bo-test/`, the default plan,
 the HI catalog root tags, `externalObjectSettings(userRight, tecConfigInfo)` (arrangement
 correction, sub-modules, thumbnails, no open/close animation of the library, the default material,
-no debug geometry) and `requestPrice` (`omPostRequest` to `/api/price/calculate`). The examples
+no debug geometry) and `requestPrice` (`omPostRequest` to `/api/price/calculate`); beside them
+`importOrder`, the order import of the sign-in example's Add to Cart
+([Save Draft and Add to Cart](./hi-sc-example.md#save-draft-and-add-to-cart)). The examples
 import it by relative path; `shared/` is a workspace for its tests and its dependency on the
 embedding-lib. `tecConfigInfo` carries the language and the library; neither the planner nor the
 kernel reads it.
@@ -114,4 +116,4 @@ of the embedding-lib's declarations is untyped; `layout.ts` declares the part it
 | `tests/planner.test.ts` | the nobilia library through the demo proxy without settings; the settings in the library and the order manager options; `plan_id`, `server_url`, `debug`; the order-manager headers; the chat on the Azure AI route |
 | `tests/price.test.ts` | the total price item, the sum in cents with recursion, no items; the coalesced follow-up run, a failed run |
 | `tests/layout.test.ts` | the AI kitchen request through the proxy and its failure; the layout JSON accepted and refused; groups removed, then the layout loaded |
-| `shared/tests/hi-planner.test.ts` | the external object settings; the price request with its path, body and headers |
+| `shared/tests/hi-planner.test.ts` | the external object settings; the price request with its path, body and headers; the order import with its status read by the correlation ID, none without one |

@@ -126,7 +126,8 @@ page `http://localhost:3300/hi-sc/`. Enter the user and password of the HI
 server and, if your login has more than one backend, the backend ID; the library is optional when the
 backend has one, and for the chat
 select the provider and enter the exact model ID and its API key. **Start planning** opens the planner; the button at the bottom opens the
-chat. Without a model, the chat runs on the model proxy of the HI server when your backend enables
+chat. **Save Draft** in the planner's bottom bar saves the plan as a draft, **Add to Cart** sends it
+with its prices to the HOMAG order manager. Without a model, the chat runs on the model proxy of the HI server when your backend enables
 the AI planning; otherwise the planner opens without a chat. On the first sign-in the page asks whether
 it may store the sign-in data in a cookie; if you allow it, the form is filled in on your next
 visit. Each field can also be prefilled by a query parameter of its name, for example

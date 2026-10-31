@@ -407,9 +407,7 @@ Select when a built-in oven at working height is requested. The unit carries one
 
 ### 1.8 Island back panel
 
-**Status.** Proposed, not applied. The library carries the peninsula and length guidance
-([library issue 23](../../.agents/backlog/library-issues.md#23-the-island-back-panel-names-no-peninsula));
-the construction and height clarification is proposed. The desc of the length
+**Status.** Applied verbatim (verified 2026-10-31 against the backend article catalog). The library carries the construction, height, peninsula and length guidance. The desc of the length
 attribute is [2.13](#213-island-back-panel-length); the module proposal is
 [3.1](#31-island-back-panel-construction).
 
@@ -649,7 +647,7 @@ The article's desc is [1.8](#18-island-back-panel).
 
 ### 3.1 Island back panel construction
 
-**Status.** Proposed, not applied.
+**Status.** Applied verbatim (verified 2026-10-31 against the backend master data).
 
 **Module.** `mr_IslandBackwall` (Island backwall), the root module of `RWV`.
 

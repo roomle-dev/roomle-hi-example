@@ -255,6 +255,8 @@ placement: {
 
 ### Moving a group
 
+For a freestanding move or turn, use `place-group` with `groupId`, `posGroup: [x, y, z]` and `posRotationZ`, plus `rootId` for one of two corner roots. The point is the same back left bottom docking corner as a new placement; turning about a fixed centre requires adjusting it. The tool keeps the group id, docking, generated roots and finishes. A replacement preserves its world docking frame even if recalculation changes the local origin.
+
 An existing group is moved with `place-group`, not with a placement: the wall by side label or
 index, `alignment` `start`, `center` (default) or `end` along it, or the side label of the
 adjoining wall to sit flush in that corner (`wall: 'right'`, `alignment: 'top'` is the back right

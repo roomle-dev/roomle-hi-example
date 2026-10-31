@@ -659,6 +659,39 @@
           "plan": "default-room",
           "image": "docs/images/kitchen-16.png",
           "expect": "the model decides what to plan; the chat sends the image with the image prompt of the planner, which names the skill image-planning; the model uses the supplied image-planning and kitchen guidance, or fetches it when missing, and plans the U-shaped kitchen of the image as one group in one create: a peninsula with the hob that stands free in the room, its back closed by a back panel as long as the peninsula in the same create, no base unit with its back open on its legs; a base row with the sink and the dishwasher; a block of two tall units with the built-in oven at the end of the sink row; four wall units whose tops line up, with two open shelf units under the middle two, hung above the floor units of their leg and ending before the back wall - no wall unit reaches past a wall; one finish for the whole kitchen set with the create - dark blue-grey or green-grey fronts and carcases, a light wood worktop, only the inside of the open shelves in wood; no tall unit and no wall unit in front of the window (back wall, x -450 to 1650, bottom 950) and nothing in the door opening (right wall, y -1180 to -280); the group is not sent again for other sizes or materials - the attribute tools change them; the final answer accurately reports any remaining omission"
+        },
+        {
+          "id": "image-kitchen-5-island",
+          "title": "Kitchen image 5: island axis and working side",
+          "plan": "default-room",
+          "image": "docs/images/kitchen-5.png",
+          "expect": "the first create and final plan reproduce the L-shaped kitchen and one island: the island long axis stays parallel to the sink/tall-unit run, cabinet fronts face the working aisle and the finished back faces away; the finishing cap matches the worktop top height from measured bottomMm/topMm for the single-height profile; a separate cap is reported as a catalog substitution rather than claimed to be one continuous worktop; no unasked quarter turn during corrections"
+        },
+        {
+          "id": "image-kitchen-5-other-corner",
+          "title": "Kitchen image 5 mapped into another corner",
+          "plan": "default-room",
+          "image": "docs/images/kitchen-5.png",
+          "prompt": "Recreate this kitchen in the back right corner of the room, preserving the island layout relative to its kitchen runs.",
+          "expect": "the kitchen maps into the back right corner; the island remains parallel to the sink/tall-unit run with its working side facing the kitchen aisle and the rear finishing side facing away; evaluate the initial create and final state by relative orientation, not a fixed room-independent island angle; doors and windows are kept clear or remaining conflicts are reported"
+        },
+        {
+          "id": "image-kitchen-5-raised-cap",
+          "title": "Kitchen image 5 with an explicitly raised rear cap",
+          "plan": "default-room",
+          "image": "docs/images/kitchen-5.png",
+          "prompt": "Recreate this kitchen, but make the rear panel and its cap on the outside of the island 1000 mm high as a deliberately raised ledge. Keep the island orientation shown.",
+          "expect": "the island stays parallel to the sink/tall-unit run with its working side facing the kitchen aisle; the outside rear component is 1000 mm high and remains above the worktop as explicitly requested, without an automatic flush-height correction or rejection"
+        },
+        {
+          "id": "image-kitchen-5-turn-island",
+          "title": "Kitchen image 5: turn the island without rebuilding it",
+          "plan": "default-room",
+          "prompt": [
+            "Create an L-shaped kitchen in the back right corner: a tall oven cabinet and sink along the back wall, a hob along the right wall, and a separate island with three 60 cm base cabinets parallel to the back-wall run. Face the island cabinet fronts toward the kitchen aisle and finish its exposed rear with a panel flush with the worktop. Use matching wood fronts and a dark worktop. Decide open details yourself.",
+            "Turn only the existing island 180 degrees around its centre. Keep its cabinets and finishes and do not rebuild it."
+          ],
+          "expect": "turn 1 creates the described kitchen-5 layout with an island parallel to the sink/tall-unit run; turn 2 uses point-form place-group on that same group for a half turn about its centre, keeping its centre, article-root IDs, docking and materials; the island axis stays parallel and the front/back sides exchange; no delete-group or create-or-replace-groups for the requested turn"
         }
       ]
     },

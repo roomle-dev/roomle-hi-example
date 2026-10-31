@@ -183,3 +183,7 @@ operations:
 | Tool error `... is not a function` | The page targets a Rubens UI whose web-sdk does not contain the plan-context APIs — override `server_url` to a deployment (or local UI dev server) that does |
 | `get-price` / `get-order-data` fail | No HI library loaded on the page, or the HI proxy rejected the credentials |
 | Empty `articles`/`masterData` | No library loaded on the page yet |
+
+## Moving a freestanding group
+
+`place-group` accepts `{ groupId, posGroup: [x, y, z], posRotationZ, rootId? }` for an existing group, using the same placement frame as creation. It preserves its id, docking, generated roots and finishes; undo and redo include the move. A rebuild preserves its world docking corner and rotation through recalculation. Positioned roots expose measured read-only `bottomMm`/`topMm`, including generated surfaces, so the assistant can compare finished heights before adjusting an adjacent finishing element. The tools and the image-planning skill remain library neutral.

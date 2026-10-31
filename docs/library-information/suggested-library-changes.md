@@ -30,7 +30,7 @@ carries the description; it does not mean the underlying calculation issue is re
 | [1.5 Width-dependent tall-unit doors](#15-width-dependent-tall-unit-doors) | `HTB60` | applied |
 | [1.6 Adjustable shelves](#16-adjustable-shelves) | `AdjShelves` | applied |
 | [1.7 Tall oven housing](#17-tall-oven-housing) | `HOTS2AB60` | applied |
-| [1.8 Island back panel](#18-island-back-panel) | `RWV` | proposed; construction and height clarification not applied |
+| [1.8 Island back panel](#18-island-back-panel) | `RWV` | applied |
 | [2.1 Colour values](#21-colour-values) | the colour list of `mod_FrontColor`, `mod_CarcaseColor`, `mod_UprightColor` and the other colour attributes | open |
 | [2.2 Front program](#22-front-program) | `mod_FrontProgram` | Modern applied; Tradition sequencing proposed |
 | [2.3 Carcase colours](#23-carcase-colours) | `mod_CarcaseColor`, `mod_CarcaseOutsideColor` | applied |
@@ -44,7 +44,7 @@ carries the description; it does not mean the underlying calculation issue is re
 | [2.11 Shelf descriptor](#211-shelf-descriptor) | `mod_ShelfadjDescriptor` | text applied; actual format and example open |
 | [2.12 Oven article codes](#212-oven-article-codes) | `mod_OvenId1`, `mod_OvenId2`, `mod_OvenId3` | applied |
 | [2.13 Island back panel length](#213-island-back-panel-length) | `mod_IslandBackwallWidth` | applied |
-| [3.1 Island back panel construction](#31-island-back-panel-construction) | `mr_IslandBackwall` | proposed |
+| [3.1 Island back panel construction](#31-island-back-panel-construction) | `mr_IslandBackwall` | applied |
 
 ## 1. Article descriptions
 
@@ -656,6 +656,6 @@ The construction and height semantics belong to this module and its article. The
 length attribute's description in [2.13](#213-island-back-panel-length) already names the length
 control and needs no revision for this proposal.
 
-| Module | `desc` in the library | Proposed `desc` |
+| Module | `desc` before | Proposed `desc` |
 |---|---|---|
 | `mr_IslandBackwall` | Module for island backwall | Rear finishing unit for a freestanding base-unit row. Builds a vertical panel and a separate horizontal cap. mod_Height is the total height from the element bottom to the cap top. mod_Depth is the cap depth and mod_PaneltopThk its thickness. Cap height does not follow the generated worktop automatically. |

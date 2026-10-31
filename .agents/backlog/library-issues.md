@@ -17,7 +17,8 @@ tools sent is an MCP issue in [mcp-issues.md](mcp-issues.md) (D99 of
 the problem, its cause, how the library behaves, the to-do for the library, the test, whether it is
 reported to the library development team, and how to reproduce it. MCP, chat and planner issues are
 tracked in [mcp-issues.md](mcp-issues.md). The **Status** of an issue says what the library already
-carries of it; the issue leaves this document when the library carries all of it. The description
+carries of it; an issue stays when the library carries all of it, in the table of the issues solved
+by descriptions. The description
 texts proposed to the library are in
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md), which
 keeps every suggested text, applied in the library or not.
@@ -62,6 +63,7 @@ library cannot calculate.
 | 12 | [A worktop on the tall units from the group's countertop switch](#12-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — a worktop on top of the tall units |
 | 15 | [The shelf descriptor names no format](#15-the-shelf-descriptor-names-no-format) | HOMAG Furniture_Smith | HOMAG library development team | the desc names the default spacing; the actual format and example open | low — the number of adjustable shelves cannot be set, so "one more shelf" is not possible with adjustable shelves |
 | 21 | [The sink descriptions: a value desc with its pasted table row, and what None builds](#21-the-sink-descriptions-a-value-desc-with-its-pasted-table-row-and-what-none-builds) | HOMAG Furniture_Smith | HOMAG library development team | the sink descriptions done (1.1, 2.8); open: the desc of `Axia_Anthrazit_R`, `None` | low — the side rule and the reaches are in the library |
+| 23 | [The island back panel names no peninsula](#23-the-island-back-panel-names-no-peninsula) | HOMAG Furniture_Smith | HOMAG library development team | both descs done | medium — the panel keeps its own length, the agent sends the group again |
 
 ### Not solved entirely by descriptions
 
@@ -1030,3 +1032,52 @@ proposed desc goes into
 `image-kitchen-16-peninsula`: the maple worktop is set with the create.
 
 **Reproduce.** `mcp-test-2026-10-28_19-47-49`, gpt-6-astra 52 (`full-kitchen-walnut-marble-corner`, bo-test): the group attributes of the create with `mod_CountertopColor` 324 and `mod_CountertopThk` 40 are not set, Error 13002 (`tab_EdgeMapping`, BoardThickness 40); `change-group-attribute` with the Style program and 25 mm sets them. `repro-kitchen-16-2026-10-30`, gpt-6-astra-1 (kitchen image 16, bo-test): the same with `mod_CountertopColor` 230 and `mod_CountertopThk` 40; `change-group-attribute` at 25 mm sets them.
+
+## 23. The island back panel names no peninsula
+
+**Library.** HOMAG Furniture_Smith. **Responsible.** HOMAG library development team.
+
+**Problem.** For a kitchen with a peninsula — a row of base units that stands free in the room at the
+end of an L or a U — the agent closes the backs of the peninsula's base units with `RWV` in the
+create, as the image-planning skill asks, but sizes the panel with `mod_Width`: the panel keeps its
+own length and covers part of the row, and the agent sends the whole group again for its length.
+Without the skill's sentence the agent plans no panel at all, and the backs stand open on their legs.
+
+**Cause.** The desc of `RWV` (category Kitchen Island) names an island only: "Decorative back panel
+for a kitchen island", "Kitchen island, covering the visible back of the island cabinets", "island
+use only". A peninsula is no island, so the desc gives the agent no reason to take the panel for it.
+Neither the desc of `RWV` nor the desc of `mod_IslandBackwallWidth` ("Width of the island
+backwall") says that the panel's length along the row is `mod_IslandBackwallWidth`, and the
+article catalog lists `mod_Width` among the panel's dimensions: the agent sizes the panel with
+`mod_Width`, and sends the group again with `mod_IslandBackwallWidth` after a `find-attributes`.
+
+**How the library behaves.** The backs of base units are open, on legs; the panel closes them. A
+panel docked back to back with a base unit of the row and as long as the row closes the whole back.
+The module `mr_IslandBackwall` takes `mod_IslandBackwallWidth` (150 to 5000 mm) and not `mod_Width`;
+the calculated panel carries `mod_Width` 1000, which the catalog's dimensions name. A `mod_Width` on
+the panel is accepted without an error and has no effect. The panel's outline is 30 mm longer than
+`mod_IslandBackwallWidth`, with `mod_IslandBackwallOverdimension` 10.
+
+**To do.** The library: the desc of `RWV` in
+[`suggested-library-changes.md` 1.8](../../docs/library-information/suggested-library-changes.md#18-island-back-panel),
+which names the peninsula and the length attribute, and the desc of `mod_IslandBackwallWidth` in
+[2.13](../../docs/library-information/suggested-library-changes.md#213-island-back-panel-length).
+
+**Open decision of the tools.** The catalog's dimensions of a root module could leave out a dimension
+of the article template that the module does not take by the master data — a filter over the
+library's module definition, no knowledge of one library. Not decided; with it, `RWV` lists depth
+and height, and the length comes from the descs alone.
+
+**Status.** Done in the library: the descs of `RWV` (section 1.8) and of `mod_IslandBackwallWidth`
+(section 2.13).
+
+**Test.** `image-kitchen-16-peninsula`: the peninsula's back is closed by a panel along the whole
+row with the create.
+
+**Reproduce.** `repro-kitchen-16-2026-10-30`, final-dev-1 to final-dev-3 and after-dev-2 to
+after-dev-3 (kitchen image 16, bo-test code): the create sends `RWV` with `mod_Width` 2250, 1800, 900,
+1800 and 1500, the panel keeps its own length, the group is sent again with
+`mod_IslandBackwallWidth`. RML-18346, `ps_te9oafs8ndawti6379315zpwhf1slpx`: `RWV` 1030 mm long
+behind a peninsula of 1800 mm; `ps_te9s5i2rbyj8y577e4kmsils9p4u7j5`: `mod_IslandBackwallWidth` 2031,
+the back closed. `repro-kitchen-16-2026-10-31/replay-first-attempt.mjs`, model-free: the same
+outlines.

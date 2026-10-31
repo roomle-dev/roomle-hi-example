@@ -401,8 +401,8 @@ Select when a built-in oven at working height is requested. The unit carries one
 
 ### 1.8 Island back panel
 
-**Status.** Applied verbatim. The desc of the length attribute is
-[2.13](#213-island-back-panel-length).
+**Status.** Applied verbatim ([library issue 23](../../.agents/backlog/library-issues.md#23-the-island-back-panel-names-no-peninsula)).
+The desc of the length attribute is [2.13](#213-island-back-panel-length).
 
 `RWV` (DP25KI) — 988 characters:
 
@@ -638,7 +638,8 @@ built, and nothing reports the drop
 
 ### 2.13 Island back panel length
 
-**Status.** Applied verbatim. The article's desc is [1.8](#18-island-back-panel).
+**Status.** Applied verbatim ([library issue 23](../../.agents/backlog/library-issues.md#23-the-island-back-panel-names-no-peninsula)).
+The article's desc is [1.8](#18-island-back-panel).
 
 **Attribute.** `mod_IslandBackwallWidth` (Width), the module `mr_IslandBackwall` of `RWV`.
 

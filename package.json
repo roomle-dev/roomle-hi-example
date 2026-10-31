@@ -6,12 +6,15 @@
   "description": "HI example: the standalone HI presets page with the planning assistant of the roomle-ui embedding-lib",
   "workspaces": [
     "minimal-hi-example",
-    "hi-sc-example"
+    "hi-sc-example",
+    "minifabric-example",
+    "shared"
   ],
   "scripts": {
     "start": "node minimal-hi-example/start.mjs",
     "dev": "node minimal-hi-example/start.mjs --dev",
     "start:sc": "npm run dev --workspace hi-sc-example",
+    "start:minifabric": "npm run dev --workspace minifabric-example",
     "dev:proxy": "dotenv -e .env.local -- npx functions-framework --target=proxy_request --source ./minifabric-example/proxy-server/index",
     "deploy:proxy": "gcloud functions deploy proxy_request --runtime nodejs20 --trigger-http --project rml-showcases --region europe-west3 --allow-unauthenticated --source ./minifabric-example/proxy-server --entry-point proxy_request",
     "test": "npm test --workspaces",

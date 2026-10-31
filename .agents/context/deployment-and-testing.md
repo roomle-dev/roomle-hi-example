@@ -6,21 +6,24 @@ evaluate the MCP tests is in the [testing skill](../../.agents/skills/hi-mcp-tes
 
 ## Workspaces and scripts
 
-The repository root is an npm workspace root over `minimal-hi-example` and `hi-sc-example`.
+The repository root is an npm workspace root over `minimal-hi-example`, `hi-sc-example`,
+`minifabric-example` and `shared`.
 
 | Where | Script | Runs |
 | ----- | ------ | ---- |
 | root | `start`, `dev` | the launcher, plain / `--dev` |
 | root | `start:sc` | the Vite dev server of the sign-in example (`hi-sc-example/`, :3300) |
-| root | `test` | the tests of every workspace: the launcher (`minimal-hi-example/tests/`, `node --test`) and the sign-in example (`hi-sc-example/tests/`) |
+| root | `start:minifabric` | the Vite dev server of the minifabric example (`minifabric-example/`, :3400) |
+| root | `test` | the tests of every workspace: the launcher (`minimal-hi-example/tests/`, `node --test`) the sign-in example (`hi-sc-example/tests/`), the minifabric example (`minifabric-example/tests/`) and the shared code (`shared/tests/`) |
 | root | `plan:mistral`, `plan:gpt5`, `plan:gpt5.4`, `plan:gpt6` | the launcher with a chat model and its key from the environment |
 | root | `dev:proxy`, `deploy:proxy` | the demo proxy (`minifabric-example/proxy-server/`): the local run on :8080, the deployment to the Cloud Function ([Demo proxy](./demo-proxy.md)) |
 | root | `format`, `format:check`, `lint`, `lint:fix` | Prettier, oxlint |
 
 The chat of the example page loads the embedding-lib and the AI SDK from unpkg and esm.sh in the
-page and needs no dependency here. Node 20 or later. The sign-in example depends on
-`@roomle/embedding-lib`, Vite and TypeScript and needs Node 22.12 or later
-([HI sign-in example](./hi-sc-example.md#dependencies-build-and-tests)).
+page and needs no dependency here. Node 20 or later. The sign-in and minifabric examples depend on
+`@roomle/embedding-lib`, Vite and TypeScript and need Node 22.12 or later
+([HI sign-in example](./hi-sc-example.md#dependencies-build-and-tests)); `shared/` on the
+embedding-lib.
 
 ## Unit tests
 
@@ -31,6 +34,8 @@ page and needs no dependency here. Node 20 or later. The sign-in example depends
 | `hi-sc-example/tests/fields-cookie.test.ts` | the sign-in cookie of the sign-in example: the fields stored and read back, the cookie attributes |
 | `hi-sc-example/tests/query-options.test.ts` | the query parameters of the sign-in example → the planner options |
 | `hi-sc-example/tests/hi-server.test.ts` | the HI proxy URL and the sign-in check of the sign-in example |
+| `minifabric-example/tests/*.test.ts` | the settings, the planner options, the prices and the layouts of the minifabric example ([HI minifabric example](./minifabric-example.md#dependencies-build-and-tests)) |
+| `shared/tests/hi-planner.test.ts` | the external object settings and the price request of the shared code |
 | `.agents/scripts/tests/*.test.js` | the test tooling (`node --test`) |
 
 The HI tools, their tool commands and the forwarding of the embedding-lib are tested in roomle-ui, see

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HOMAG Intelligence Minifabrik</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+
+  <body>
+    <div id="app">
+      <aside id="settings-panel" class="is-expanded">
+        <div class="settings-panel__content">
+          <div class="settings-panel__header">Settings</div>
+          <details id="settings-details">
+            <summary class="settings-panel__label">Information</summary>
+            <h4>Testing Credentials</h4>
+            <p>
+              The proxy used in this demo will use placeholder credentials
+              <b>(API Key, Library ID, Subscription ID, Endpoint URL)</b> by
+              default.
+            </p>
+            <p>
+              Entering a value into any of the corresponding fields will tell
+              the demo proxy to use the credential you supplied instead.
+            </p>
+          </details>
+          <form id="settings">
+            <label class="settings-panel__field">
+              <span class="settings-panel__label">Locale</span>
+              <select name="locale">
+                <option value="en-US,en">en-US,en</option>
+                <option value="de-DE,de">de-DE,de</option>
+              </select>
+            </label>
+            <label class="settings-panel__field">
+              <span class="settings-panel__label">API Key</span>
+              <input name="apiKey" placeholder="API Key" />
+            </label>
+            <label class="settings-panel__field">
+              <span class="settings-panel__label">Library ID</span>
+              <input name="libraryId" placeholder="Library ID" />
+            </label>
+            <label class="settings-panel__field">
+              <span class="settings-panel__label">Subscription ID</span>
+              <input name="subscriptionId" placeholder="Subscription ID" />
+            </label>
+            <label class="settings-panel__field">
+              <span class="settings-panel__label">Endpoint URL</span>
+              <input
+                name="endpointUrl"
+                placeholder="https://connect.homag.com/"
+              />
+            </label>
+            <label class="settings-panel__field">
+              <span class="settings-panel__label">Parameter Level</span>
+              <select name="userRight">
+                <option value="Simple">Simple</option>
+                <option value="Advanced">Advanced</option>
+                <option value="Master">Master</option>
+              </select>
+            </label>
+            <button class="settings-panel__button settings-panel__button--red">
+              Reload
+            </button>
+          </form>
+          <div class="settings-panel__divider"></div>
+          <div class="settings-panel__label">Actions</div>
+          <button id="send-to-om" class="settings-panel__button">
+            Send to OM
+          </button>
+          <button id="calc-price" class="settings-panel__button">
+            Calc Price
+          </button>
+          <button id="load-layout" class="settings-panel__button">
+            Load layout
+          </button>
+          <button id="generate-with-ai" class="settings-panel__button">
+            Generate with AI
+          </button>
+        </div>
+        <button
+          id="settings-panel-toggle"
+          class="settings-panel__toggle"
+          aria-label="Show or hide the settings"
+          aria-expanded="true"
+        ></button>
+      </aside>
+      <div id="container"></div>
+    </div>
+  </body>
+</html>

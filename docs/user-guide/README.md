@@ -16,7 +16,7 @@ the [store chat](#1-the-store-chat); the example pages need a terminal.
 
 - [What you can do](#what-you-can-do)
 - [How it works](#how-it-works)
-- [Three ways to use it](#three-ways-to-use-it)
+- [Four ways to use it](#four-ways-to-use-it)
 - [Talking to the assistant](#talking-to-the-assistant)
 - [Example prompts](#example-prompts)
 - [What to expect](#what-to-expect)
@@ -67,13 +67,14 @@ you ──> AI assistant ──> HI planning tools ──> your open planner tab
 - Every change happens in the planner tab you have open. **Keep that tab open** while you work with
   the assistant.
 
-## Three ways to use it
+## Four ways to use it
 
 | Way | You need | Best for |
 | --- | -------- | -------- |
 | [1. The store chat](#1-the-store-chat) | a browser and an API key for the chat model | trying it out, demos |
 | [2. The example page with its chat](#2-the-example-page-with-its-chat) | the repository, Node.js and an API key | developers, demos with other models |
 | [3. The sign-in example](#3-the-sign-in-example) | the repository, Node.js, the HI server login and an API key | demos where the login and the model are entered on the page |
+| [4. The minifabric example](#4-the-minifabric-example) | the repository and Node.js | demos with the nobilia library, without a login or an API key |
 
 Ask the team that runs the HI MCP for the API key of a chat model.
 
@@ -131,6 +132,23 @@ visit. Each field can also be prefilled by a query parameter of its name, for ex
 `?backendId=<backend-id>&libraryId=<library>`; other query parameters go to the planner, for example
 `id=<plan-id>` for a saved plan or `language=de-DE`. More in the
 [README of the example](../../hi-sc-example/README.md).
+
+### 4. The minifabric example
+
+Run it in the repository folder:
+
+```bash
+npm install
+npm run start:minifabric
+```
+
+The browser opens `http://localhost:3400` with the planner and the library `nobilia_Minifabrik`. It
+needs no login and no API key: the library, the prices and the chat (`gpt-6-astra`) go through
+Roomle's demo proxy, which holds the credentials. To test with your own credentials, enter the API
+key, library, subscription and endpoint in the settings panel on the left and press **Reload**.
+**Generate with AI** plans a kitchen with the AI kitchen generation, **Load layout** loads an article
+layout file, and the button at the bottom of the planner opens the chat. More in the
+[README of the example](../../minifabric-example/README.md).
 
 ## Talking to the assistant
 

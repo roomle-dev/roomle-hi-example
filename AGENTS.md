@@ -80,7 +80,8 @@ roomle-hi-example is a demonstration and development environment for:
 
 1. **HI Presets Example** — A standalone HTML page (`index.html`) that demonstrates HOMAG Intelligence (HI) room planning with preset configurations, with the AI chat of the roomle-ui embedding-lib: its planning assistant (`startPlanningAssistant`) runs the HI MCP tools (`createHiMcpTools`) in the page
 2. **HI Sign-in Example** (`hi-sc-example/`) — the same planner with its chat in TypeScript (Vite), behind a sign-in page where the HI server login, backend ID, library, and the provider, model and API key of the chat are entered ([`.agents/context/hi-sc-example.md`](./.agents/context/hi-sc-example.md))
-3. **Demo Proxy** (`minifabric-example/proxy-server/`) — the Cloud Function `proxy_request` that forwards the requests of the Roomle demos to HOMAG and Azure AI Foundry; `npm run dev:proxy` runs it locally, `npm run deploy:proxy` deploys it ([`.agents/context/demo-proxy.md`](./.agents/context/demo-proxy.md))
+3. **HI Minifabric Example** (`minifabric-example/`) — the planner with the library `nobilia_Minifabrik` through the demo proxy, a settings panel for the testing credentials, the AI kitchen generation and the chat in TypeScript (Vite); it shares the planner basics and the price request with the sign-in example in `shared/` ([`.agents/context/minifabric-example.md`](./.agents/context/minifabric-example.md))
+4. **Demo Proxy** (`minifabric-example/proxy-server/`) — the Cloud Function `proxy_request` that forwards the requests of the Roomle demos to HOMAG and Azure AI Foundry; `npm run dev:proxy` runs it locally, `npm run deploy:proxy` deploys it ([`.agents/context/demo-proxy.md`](./.agents/context/demo-proxy.md))
 
 The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) provides:
 - Static file serving for the example HTML page on port 3000
@@ -100,8 +101,12 @@ The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) prov
 │   └── tests/                  # Unit tests (Node test runner)
 ├── df-salesPortal_sc-example/  # Sales portal example: the df-salesPortal page, the chat on the model proxy of the HI server
 │   └── index.html              # Single file, inline JS (.agents/context/df-sales-portal-sc-example.md)
-├── minifabric-example/
+├── minifabric-example/         # Minifabric example in TypeScript (Vite, :3400): the nobilia library through the demo proxy (.agents/context/minifabric-example.md)
+│   ├── index.html              # Settings panel and planner
+│   ├── src/                    # main.ts, layout.ts, planner.ts, price.ts, settings.ts, style.css
+│   ├── tests/                  # Unit tests (Node test runner)
 │   └── proxy-server/           # The demo proxy, Cloud Function proxy_request: index.js, package.json (.agents/context/demo-proxy.md)
+├── shared/                     # Code the sign-in and minifabric examples share: src/hi-planner.ts, tests/
 ├── package.json                  # Project metadata and scripts
 ├── README.md                     # Quickstart and usage guide
 ├── AGENTS.md                     # This file - AI assistant instructions
@@ -482,7 +487,8 @@ This serves the example page `minimal-hi-example/index.html` on port 3000 and op
 `npm start <provider>:<model-id> <api-key>` adds the chat ([docs/ai-chat.md](./docs/ai-chat.md)), whose planning
 assistant runs the HI tools. `npm run start:sc` starts the sign-in example (`hi-sc-example/`) on
 port 3300; a push to the branch `release/pages` publishes it to GitHub Pages
-(<https://roomle-dev.github.io/roomle-hi-example/>).
+(<https://roomle-dev.github.io/roomle-hi-example/>). `npm run start:minifabric` starts the minifabric
+example (`minifabric-example/`) on port 3400.
 
 ### The Tools
 

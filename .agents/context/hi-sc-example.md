@@ -67,6 +67,7 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 | `hi-sc-example/src/hi-server.ts` | `BACKEND_IDS`, `hiProxyBaseUrl`, `fetchBackend`, `resolveLibraryId`, `modelProxyConfig` |
 | `hi-sc-example/src/model-config.ts` | `planningAssistantConfig`: provider, model ID and key → the `PlanningAssistantConfig` of the embedding-lib |
 | `hi-sc-example/src/planner.ts` | `startPlanner`: HI setup, planner, planning assistant |
+| `shared/src/hi-planner.ts` | the planner basics and the price request, shared with the minifabric example ([Shared code](./minifabric-example.md#shared-code)) |
 | `hi-sc-example/src/query-options.ts` | `plannerQueryOptions`: the query parameters other than the form fields → planner options |
 | `hi-sc-example/src/style.css` | the sign-in page; the planner fills the window |
 | `hi-sc-example/tests/model-config.test.ts` | the unit tests of `planningAssistantConfig` |

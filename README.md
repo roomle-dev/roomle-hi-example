@@ -4,7 +4,7 @@ Standalone HI presets example (one `minimal-hi-example/index.html`) with the AI 
 embedding-lib: its planning assistant runs the HI tools in the page, and an AI agent plans HOMAG
 Intelligence object groups in a live Roomle room-planner session.
 
-New to the HI MCP? The [user guide](./docs/user-guide/README.md) explains what it does, the three
+New to the HI MCP? The [user guide](./docs/user-guide/README.md) explains what it does, the four
 ways to use it, and how to talk to the assistant. How it is built — the processes, modules,
 protocols and conventions — is in the [implementation documentation](./.agents/context/README.md).
 
@@ -76,6 +76,18 @@ npm run start:sc     # Vite dev server on :3300, opens the sign-in page
 
 A push to the branch `release/pages` publishes it to GitHub Pages
 (`.github/workflows/deploy.yml`).
+
+## Minifabric example (TypeScript)
+
+[`minifabric-example/`](./minifabric-example/README.md) is the planner with the library
+`nobilia_Minifabrik` through Roomle's demo proxy: a settings panel for your own testing
+credentials, prices, orders, the AI kitchen generation and the AI chat. The demo proxy itself is in
+[`minifabric-example/proxy-server/`](./minifabric-example/proxy-server/README.md).
+
+```bash
+npm install
+npm run start:minifabric     # Vite dev server on :3400
+```
 
 ## Ask the agent
 

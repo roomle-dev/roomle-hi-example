@@ -1,21 +1,21 @@
 import RoomleEmbeddingApi from '@roomle/embedding-lib';
 import {
-  omPostRequest,
   setupHi,
   startPlanningAssistant,
   type PlanningAssistantConfig,
 } from '@roomle/embedding-lib/hi';
+import {
+  DEFAULT_PLAN_ID,
+  EMBEDDING_ID,
+  HI_ROOT_TAGS,
+  SERVER_URL,
+  externalObjectSettings,
+  requestPrice,
+} from '../../shared/src/hi-planner.ts';
 import { hiProxyBaseUrl, type HiBackend } from './hi-server.ts';
 import type { QueryOptions } from './query-options.ts';
 
-const EMBEDDING_ID = '948zg40lbmdbthwcoym0m1e4coqa55z';
-const SERVER_URL = 'https://www.roomle.com/t/bo-test/';
-const DEFAULT_PLAN_ID = 'ps_8jjg0zezlblb48vzn8qas9vwwn7fqbg';
 const LANGUAGE = 'en-US,en';
-const HI_ROOT_TAGS = [
-  '__ext__obj__#external:root-tag',
-  'g1a15v0676q3kgibgvu7pqf1nsdykd',
-];
 
 export interface PlannerSettings {
   authorization: string;
@@ -44,9 +44,7 @@ export const startPlanner = async (
   };
   await setupHi(hiOptions, {
     onFetchPrice: (orderData: unknown) =>
-      omPostRequest(hiOptions, { orderData }, '/api/price/calculate', {
-        Authorization: authorization,
-      }),
+      requestPrice(hiOptions, orderData, { Authorization: authorization }),
   });
   const planner = await RoomleEmbeddingApi.createPlanner(
     EMBEDDING_ID,
@@ -70,20 +68,10 @@ export const startPlanner = async (
       ],
       configureInRoom: backend?.configureInRoom ?? false,
       hi: hiOptions,
-      externalObjectSettings: {
-        enableArrangementCorrection: true,
-        uiConfiguration: {
-          userRight: 'Simple',
-          showPossibleSubModules: true,
-          animatedOpenClose: false,
-          showThumbnails: true,
-        },
-        materialConfiguration: {
-          defaultMaterial: 'roomle_script_test:gray_transparent',
-        },
-        debugConfiguration: { createDebugGeometry: false },
-        tecConfigInfo: { language: LANGUAGE, libraryId },
-      },
+      externalObjectSettings: externalObjectSettings('Simple', {
+        language: LANGUAGE,
+        libraryId,
+      }),
       ...queryOptions,
     }
   );

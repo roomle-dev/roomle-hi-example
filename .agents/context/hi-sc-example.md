@@ -8,7 +8,8 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 
 1. **Sign-in view** (`index.html`): a form over the background image
    `src/assets/say-hi-to-homag-intelligence.jpg` with the user and password of the HI server, the
-   optional backend ID and library, and the optional provider, model and API key of the chat. The
+   optional backend ID and library, and the optional provider, model and API key of the chat in the
+   section "AI chat (optional)", a `<details>` collapsed at start. The
    backend ID is a text field with a ▾ button: the button opens the list `#backend-id-list` of the
    backend IDs of the HI server (`BACKEND_IDS`, `hi-server.ts`, from df-salesPortal
    `Infrastructure/salesConfigurator/test01/appsettings.json`), under the headings DEV, INT, PRE,

@@ -12,6 +12,8 @@
     "start": "node minimal-hi-example/start.mjs",
     "dev": "node minimal-hi-example/start.mjs --dev",
     "start:sc": "npm run dev --workspace hi-sc-example",
+    "dev:proxy": "dotenv -e .env.local -- npx functions-framework --target=proxy_request --source ./minifabric-example/proxy-server/index",
+    "deploy:proxy": "gcloud functions deploy proxy_request --runtime nodejs20 --trigger-http --project rml-showcases --region europe-west3 --allow-unauthenticated --source ./minifabric-example/proxy-server --entry-point proxy_request",
     "test": "npm test --workspaces",
     "plan:mistral": "npm start mistral:mistral-large-latest $MISTRAL_API_KEY",
     "plan:gpt5": "npm start azure:gpt-5-mini $AZURE_GPT_KEY -- --reasoning-effort high",
@@ -23,6 +25,9 @@
     "lint:fix": "oxlint --fix"
   },
   "devDependencies": {
+    "@google-cloud/functions-framework": "3.4.5",
+    "dotenv-cli": "8.0.0",
+    "node-fetch": "3.3.2",
     "oxlint": "1.86.0",
     "prettier": "3.8.3"
   }

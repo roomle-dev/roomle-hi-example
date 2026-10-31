@@ -114,14 +114,14 @@ a chat. The chat runs in the page.
 ### 3. The sign-in example
 
 It is published on GitHub Pages — open <https://roomle-dev.github.io/roomle-hi-example/> and choose
-**HI Sign-in Example**; you need only a browser. Or run it in the repository folder:
+**HI Sales Configurator**; you need only a browser. Or run it in the repository folder:
 
 ```bash
 npm install
 npm run start:sc
 ```
 
-The browser opens the start page `http://localhost:3300`; **HI Sign-in Example** opens the sign-in
+The browser opens the start page `http://localhost:3300`; **HI Sales Configurator** opens the sign-in
 page `http://localhost:3300/hi-sc/`. Enter the user and password of the HI
 server and, if your login has more than one backend, the backend ID; the library is optional when the
 backend has one, and for the chat
@@ -137,7 +137,7 @@ visit. Each field can also be prefilled by a query parameter of its name, for ex
 ### 4. The minifabric example
 
 It is published on GitHub Pages — open <https://roomle-dev.github.io/roomle-hi-example/> and choose
-**nobilia Minifabrik Example**. Or run it in the repository folder with `npm run start:sc` and
+**nobilia Minifabrik**. Or run it in the repository folder with `npm run start:sc` and
 choose it on the start page (`http://localhost:3300/nobilia-minifabrik/`).
 
 The planner opens with the library `nobilia_Minifabrik`. It

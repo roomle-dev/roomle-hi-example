@@ -3,10 +3,12 @@
 import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import http from 'node:http';
+import { extname } from 'node:path';
 import { createServer } from 'vite';
 import { EXAMPLES, START_PAGE, route } from './examples.mjs';
 
 const PORT = 3300;
+const CONTENT_TYPES = { '.jpg': 'image/jpeg' };
 
 const openInBrowser = (url) => {
   const command =
@@ -60,6 +62,17 @@ server.on('request', async (request, response) => {
   if (target.kind === 'start-page') {
     response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     response.end(await readFile(START_PAGE));
+  } else if (target.kind === 'start-page-asset') {
+    try {
+      const body = await readFile(target.file);
+      response.writeHead(200, {
+        'content-type':
+          CONTENT_TYPES[extname(target.file)] ?? 'application/octet-stream',
+      });
+      response.end(body);
+    } catch {
+      response.writeHead(404).end('Not found');
+    }
   } else if (target.kind === 'redirect') {
     response.writeHead(302, { location: target.location }).end();
   } else if (target.kind === 'example') {

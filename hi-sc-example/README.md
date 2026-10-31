@@ -6,15 +6,15 @@ key of the chat. **Start planning** checks the sign-in and opens the planner wit
 Planning Assistant, as the [minimal example](../minimal-hi-example/README.md) does. How it is built:
 [.agents/context/hi-sc-example.md](../.agents/context/hi-sc-example.md).
 
-**Published on GitHub Pages:** <https://roomle-dev.github.io/roomle-hi-example/>
+**Published on GitHub Pages:** <https://roomle-dev.github.io/roomle-hi-example/hi-sc/>
 
 **1. Once:** install Node 22.12+ and run `npm install` in the repository root.
 
-**2. Start it** — the Vite dev server serves the page on :3300 (the next free port if it is taken)
-and opens the browser:
+**2. Start it** — the [start page](../.agents/context/start-page.md) opens on :3300 (the next free
+port if it is taken) with the link to the example, <http://localhost:3300/hi-sc/>:
 
 ```bash
-npm run start:sc        # in the repository root; or `npm run dev` in hi-sc-example/
+npm run start:sc        # in the repository root; or `npm run dev` in hi-sc-example/ for the example alone on :3300
 ```
 
 **3. Sign in** with the user and password of the HI server and, optionally, the backend ID and the
@@ -44,7 +44,7 @@ parameter of its name, which overwrites the cookie — `user`, `password`, `back
 `provider`, `model`, `apiKey`:
 
 ```text
-http://localhost:3300/?backendId=<backend-id>&libraryId=<library>&provider=azure&model=<deployment>
+http://localhost:3300/hi-sc/?backendId=<backend-id>&libraryId=<library>&provider=azure&model=<deployment>
 ```
 
 Every other query parameter goes to the planner (`createPlanner`) and overwrites its option of the
@@ -52,7 +52,7 @@ same name — for example `id` (the plan), `overrideServerUrl` (over the backend
 numbers keep their type. A `language` also sets the planner's `locale`:
 
 ```text
-http://localhost:3300/?id=<plan-id>&overrideServerUrl=http://localhost:5173/&language=de-DE
+http://localhost:3300/hi-sc/?id=<plan-id>&overrideServerUrl=http://localhost:5173/&language=de-DE
 ```
 
 **4. Ask the agent** — the button at the bottom of the planner opens the chat.
@@ -64,4 +64,3 @@ http://localhost:3300/?id=<plan-id>&overrideServerUrl=http://localhost:5173/&lan
 | `npm run preview` | serves the production build on :3300 |
 | `npm run typecheck` | `tsc` |
 | `npm test` | the unit tests (Node's test runner) |
-| `npm run build:pages` | the production build for GitHub Pages (base `/roomle-hi-example/`); a push to the branch `release/pages` builds and publishes it |

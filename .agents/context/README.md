@@ -25,6 +25,7 @@ deploy it in [setup](../../docs/setup/).
 | [HI sign-in example](./hi-sc-example.md) | `hi-sc-example/`: the planner with its chat in TypeScript behind a sign-in page |
 | [Sales portal example](./df-sales-portal-sc-example.md) | `df-salesPortal_sc-example/`: the sales configurator page of the df-salesPortal with the AI Planning Assistant on the model proxy of the HI server |
 | [HI minifabric example](./minifabric-example.md) | `minifabric-example/`: the planner with the nobilia library through the demo proxy, the testing credentials, the AI kitchen generation and the chat; the code shared with the sign-in example |
+| [Start page and GitHub Pages](./start-page.md) | `pages/`: the start page of the TypeScript examples on :3300 and on GitHub Pages, its dev server and its build |
 | [Demo proxy](./demo-proxy.md) | `minifabric-example/proxy-server/`: the Cloud Function `proxy_request` that forwards the requests of the Roomle demos to HOMAG and Azure AI Foundry; running it locally, deploying it |
 | [Scripts and testing](./deployment-and-testing.md) | The workspaces and scripts, the unit tests, the end-to-end test runs |
 
@@ -42,8 +43,7 @@ deploy it in [setup](../../docs/setup/).
 | Process | Started by | Port | Code |
 | ------- | ---------- | ---- | ---- |
 | Example page (static files, the model of its chat) | `npm start` (`minimal-hi-example/start.mjs`) | 3000 (`EXAMPLE_PORT`) | `minimal-hi-example/index.html` |
-| Sign-in example (Vite dev server) | `npm run start:sc` | 3300 | `hi-sc-example/` |
-| Minifabric example (Vite dev server) | `npm run start:minifabric` | 3400 | `minifabric-example/` |
+| Start page with the sign-in example (`/hi-sc/`) and the minifabric example (`/nobilia-minifabrik/`) on their Vite dev servers | `npm run start:sc` | 3300 | `pages/serve.mjs` |
 | Demo proxy (Functions Framework, local run) | `npm run dev:proxy` | 8080 | `minifabric-example/proxy-server/` |
 
 ## Repository map
@@ -56,6 +56,7 @@ deploy it in [setup](../../docs/setup/).
 | `df-salesPortal_sc-example/index.html` | The sales portal example: plain JavaScript, the planner with prices and the order, the planning assistant on the model proxy of the HI server |
 | `minifabric-example/` | The minifabric example in TypeScript: the nobilia library through the demo proxy, the settings panel, the AI kitchen generation and the chat |
 | `shared/` | The code the sign-in and minifabric examples share: the planner basics and the price request |
+| `pages/` | The start page of the sign-in and minifabric examples: its dev server (`start:sc`) and the GitHub Pages build |
 | `minifabric-example/proxy-server/` | The demo proxy: the Cloud Function `proxy_request`, deployed with `npm run deploy:proxy` |
 | `.agents/scripts/run-hi-mcp-prompt.js`, `run-hi-mcp-tests.js` | End-to-end runs of prompts through the chat of the example page in a headless planner |
 | `docs/test-prompts.json` | The end-to-end test cases |

@@ -4,12 +4,15 @@ The HI planner with the library `nobilia_Minifabrik` through Roomle's demo proxy
 for the testing credentials, the AI kitchen generation and the AI Planning Assistant. How it is
 built: [.agents/context/minifabric-example.md](../.agents/context/minifabric-example.md).
 
+**Published on GitHub Pages:** <https://roomle-dev.github.io/roomle-hi-example/nobilia-minifabrik/>
+
 **1. Once:** install Node 22.12+ and run `npm install` in the repository root.
 
-**2. Start it** — the Vite dev server serves the page on :3400 and opens the browser:
+**2. Start it** — the [start page](../.agents/context/start-page.md) opens on :3300 with the link
+to the example, <http://localhost:3300/nobilia-minifabrik/>:
 
 ```bash
-npm run start:minifabric   # in the repository root; or `npm run dev` in minifabric-example/
+npm run start:sc   # in the repository root; or `npm run dev` in minifabric-example/ for the example alone on :3400
 ```
 
 **3. Plan.** The planner opens with the default plan and the nobilia library. The settings panel on

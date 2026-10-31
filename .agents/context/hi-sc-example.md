@@ -41,8 +41,9 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
    - after the sign-in is accepted and while no sign-in cookie exists, the dialog `#cookie-consent`
      asks to store the sign-in data ("Only the essential login data is stored"). **Allow** writes
      all seven fields to the cookie `hi-sc-sign-in` (`fields-cookie.ts`: JSON, one year,
-     `SameSite=Strict`, no `path`, so the cookie belongs to the page's own path — on GitHub Pages
-     `/roomle-hi-example`, and the other sites of `roomle-dev.github.io` do not get it);
+     `SameSite=Strict`, no `path`, so the cookie belongs to the page's own path — `/hi-sc` on the
+     start page's dev server, `/roomle-hi-example/hi-sc` on GitHub Pages, and the other sites of
+     `roomle-dev.github.io` and the other examples do not get it);
      **Decline** or Escape stores nothing, and the next sign-in asks
      again. With the cookie, every sign-in rewrites it without asking;
    - the page swaps the sign-in view for the planner view, without a reload. The page writes
@@ -117,7 +118,8 @@ of roomle-ui.
   Its declarations type `PlanningAssistantConfig` and `startPlanningAssistant`; the planner's init
   data and the HI callbacks refer to roomle-ui sources the package does not ship and are untyped
   (`skipLibCheck`).
-- **Vite** serves the page on :3300 (`npm run dev`, the root `start:sc`) and builds it into `dist/`;
+- **Vite** serves the page under `/hi-sc/` of the [start page](./start-page.md) (the root `start:sc`)
+  or alone on :3300 (`npm run dev`), and builds it into `dist/`;
   **TypeScript** only checks types (`tsc`, `noEmit`). Vite needs Node 22.12 or later.
 - **Unit tests** run with Node's test runner and type stripping
   (`node --experimental-strip-types --test tests/*.test.ts`), without a test framework. `tests/` is
@@ -133,18 +135,5 @@ of roomle-ui.
 
 ## GitHub Pages
 
-The page is published at <https://roomle-dev.github.io/roomle-hi-example/> by the workflow
-`.github/workflows/deploy.yml`, which runs on every push to the branch `release/pages` and builds from
-it:
-
-1. `npm ci`, then `npm run build:pages --workspace hi-sc-example` — the type check and
-   `vite build --base /roomle-hi-example/`;
-2. `actions/upload-pages-artifact` uploads `hi-sc-example/dist`, `actions/deploy-pages` deploys it to
-   the environment `github-pages` (`permissions`: `pages: write`, `id-token: write`).
-
-To publish, push to `release/pages`, for example `git push origin master:release/pages`. No branch
-holds the build.
-
-The repository needs, once: Pages with the source **GitHub Actions** (settings → Pages), and
-`release/pages` among the deployment branches of the environment `github-pages` (settings →
-Environments), which allows only the default branch at first.
+The example is published under `/hi-sc/` of the start page at
+<https://roomle-dev.github.io/roomle-hi-example/hi-sc/> — see [Start page and GitHub Pages](./start-page.md#github-pages).

@@ -95,18 +95,19 @@ The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) prov
 ├── minimal-hi-example/         # Minimal standalone HI example
 │   ├── index.html              # HI presets example page (single file, inline JS)
 │   └── start.mjs               # Launcher: static serving (:3000), the model of the chat
-├── hi-sc-example/              # Sign-in example in TypeScript (Vite, :3300)
+├── hi-sc-example/              # Sign-in example in TypeScript (Vite)
 │   ├── index.html              # Sign-in view and planner view
 │   ├── src/                    # main.ts, fields-cookie.ts, hi-server.ts, model-config.ts, planner.ts, query-options.ts, style.css, assets/
 │   └── tests/                  # Unit tests (Node test runner)
 ├── df-salesPortal_sc-example/  # Sales portal example: the df-salesPortal page, the chat on the model proxy of the HI server
 │   └── index.html              # Single file, inline JS (.agents/context/df-sales-portal-sc-example.md)
-├── minifabric-example/         # Minifabric example in TypeScript (Vite, :3400): the nobilia library through the demo proxy (.agents/context/minifabric-example.md)
+├── minifabric-example/         # Minifabric example in TypeScript (Vite): the nobilia library through the demo proxy (.agents/context/minifabric-example.md)
 │   ├── index.html              # Settings panel and planner
 │   ├── src/                    # main.ts, layout.ts, planner.ts, price.ts, settings.ts, style.css
 │   ├── tests/                  # Unit tests (Node test runner)
 │   └── proxy-server/           # The demo proxy, Cloud Function proxy_request: index.js, package.json (.agents/context/demo-proxy.md)
 ├── shared/                     # Code the sign-in and minifabric examples share: src/hi-planner.ts, tests/
+├── pages/                      # Start page of the sign-in and minifabric examples: dev server (:3300), GitHub Pages build (.agents/context/start-page.md)
 ├── package.json                  # Project metadata and scripts
 ├── README.md                     # Quickstart and usage guide
 ├── AGENTS.md                     # This file - AI assistant instructions
@@ -485,10 +486,10 @@ npm start          # or: node minimal-hi-example/start.mjs
 
 This serves the example page `minimal-hi-example/index.html` on port 3000 and opens it;
 `npm start <provider>:<model-id> <api-key>` adds the chat ([docs/ai-chat.md](./docs/ai-chat.md)), whose planning
-assistant runs the HI tools. `npm run start:sc` starts the sign-in example (`hi-sc-example/`) on
-port 3300; a push to the branch `release/pages` publishes it to GitHub Pages
-(<https://roomle-dev.github.io/roomle-hi-example/>). `npm run start:minifabric` starts the minifabric
-example (`minifabric-example/`) on port 3400.
+assistant runs the HI tools. `npm run start:sc` opens the start page (`pages/`) on port 3300 with the
+sign-in example (`hi-sc-example/`) under `/hi-sc/`, the minifabric example (`minifabric-example/`)
+under `/nobilia-minifabrik/` and the link to the ligna-store; a push to the branch `release/pages`
+publishes the same to GitHub Pages (<https://roomle-dev.github.io/roomle-hi-example/>).
 
 ### The Tools
 

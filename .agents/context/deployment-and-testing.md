@@ -7,14 +7,14 @@ evaluate the MCP tests is in the [testing skill](../../.agents/skills/hi-mcp-tes
 ## Workspaces and scripts
 
 The repository root is an npm workspace root over `minimal-hi-example`, `hi-sc-example`,
-`minifabric-example` and `shared`.
+`minifabric-example`, `shared` and `pages`.
 
 | Where | Script | Runs |
 | ----- | ------ | ---- |
 | root | `start`, `dev` | the launcher, plain / `--dev` |
-| root | `start:sc` | the Vite dev server of the sign-in example (`hi-sc-example/`, :3300) |
-| root | `start:minifabric` | the Vite dev server of the minifabric example (`minifabric-example/`, :3400) |
-| root | `test` | the tests of every workspace: the launcher (`minimal-hi-example/tests/`, `node --test`) the sign-in example (`hi-sc-example/tests/`), the minifabric example (`minifabric-example/tests/`) and the shared code (`shared/tests/`) |
+| root | `start:sc` | the start page on :3300 with the sign-in example under `/hi-sc/` and the minifabric example under `/nobilia-minifabrik/` ([Start page](./start-page.md)) |
+| `pages` | `build:pages` | the start page with both examples for GitHub Pages into `pages/dist/` |
+| root | `test` | the tests of every workspace: the launcher (`minimal-hi-example/tests/`, `node --test`) the sign-in example (`hi-sc-example/tests/`), the minifabric example (`minifabric-example/tests/`), the shared code (`shared/tests/`) and the start page (`pages/tests/`) |
 | root | `plan:mistral`, `plan:gpt5`, `plan:gpt5.4`, `plan:gpt6` | the launcher with a chat model and its key from the environment |
 | root | `dev:proxy`, `deploy:proxy` | the demo proxy (`minifabric-example/proxy-server/`): the local run on :8080, the deployment to the Cloud Function ([Demo proxy](./demo-proxy.md)) |
 | root | `format`, `format:check`, `lint`, `lint:fix` | Prettier, oxlint |
@@ -36,6 +36,7 @@ embedding-lib.
 | `hi-sc-example/tests/hi-server.test.ts` | the HI proxy URL and the sign-in check of the sign-in example |
 | `minifabric-example/tests/*.test.ts` | the settings, the planner options, the prices and the layouts of the minifabric example ([HI minifabric example](./minifabric-example.md#dependencies-build-and-tests)) |
 | `shared/tests/hi-planner.test.ts` | the external object settings and the price request of the shared code |
+| `pages/tests/examples.test.js` | the examples, the routing and the links of the start page (`node --test`) |
 | `.agents/scripts/tests/*.test.js` | the test tooling (`node --test`) |
 
 The HI tools, their tool commands and the forwarding of the embedding-lib are tested in roomle-ui, see

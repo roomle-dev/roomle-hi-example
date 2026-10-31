@@ -1,0 +1,15 @@
+{
+  "name": "hi-example-pages",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The start page of the HI examples on :3300 and on GitHub Pages, with the sign-in and minifabric examples under it",
+  "scripts": {
+    "dev": "node serve.mjs",
+    "build:pages": "tsc -p ../hi-sc-example && tsc -p ../minifabric-example && node build.mjs /roomle-hi-example/",
+    "test": "node --test tests/*.test.js"
+  },
+  "devDependencies": {
+    "vite": "8.3.5"
+  }
+}

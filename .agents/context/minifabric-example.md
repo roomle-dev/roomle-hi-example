@@ -12,7 +12,9 @@ AI kitchen generation and the AI Planning Assistant. It is the standalone form o
    `nobilia-demo-settings` over the defaults (`loadSettings`; an invalid entry or an unreadable
    storage keeps the defaults), then the query parameters `locale` (or `language`), `apiKey`,
    `libraryId` (or `library_id`), `subscriptionId`, `endpointUrl` and `user_right`
-   (`applyQueryParams`; an unknown parameter level keeps the setting). The page fills the form
+   (`applyQueryParams`; an unknown parameter level keeps the setting). localStorage belongs to the
+   origin: on GitHub Pages the `nobilia-web-sdk-demo` of `roomle-dev.github.io`, which uses the same
+   key, shares the settings. The page fills the form
    `#settings` of the panel with them and stores them. **Reload** stores the form and reloads the
    page. The ▸ button collapses the panel.
 2. **Planner options** (`planner.ts`, `plannerOptions`): the library is the entered one, else
@@ -100,8 +102,10 @@ examples app provides the environment:
 ## Dependencies, build and tests
 
 The same as the sign-in example ([Dependencies, build and tests](./hi-sc-example.md#dependencies-build-and-tests)):
-`@roomle/embedding-lib` `0.0.0-dev-4c2797a`, Vite on :3400 (`npm run dev`, the root
-`start:minifabric`), `tsc` for the types, Node's test runner with type stripping. The planner API
+`@roomle/embedding-lib` `0.0.0-dev-4c2797a`, Vite under `/nobilia-minifabrik/` of the
+[start page](./start-page.md) (the root `start:sc`, on GitHub Pages
+<https://roomle-dev.github.io/roomle-hi-example/nobilia-minifabrik/>) or alone on :3400
+(`npm run dev`), `tsc` for the types, Node's test runner with type stripping. The planner API
 of the embedding-lib's declarations is untyped; `layout.ts` declares the part it calls.
 
 | Test | Covers |

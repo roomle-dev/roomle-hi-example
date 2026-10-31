@@ -74,7 +74,7 @@ you ──> AI assistant ──> HI planning tools ──> your open planner tab
 | [1. The store chat](#1-the-store-chat) | a browser and an API key for the chat model | trying it out, demos |
 | [2. The example page with its chat](#2-the-example-page-with-its-chat) | the repository, Node.js and an API key | developers, demos with other models |
 | [3. The sign-in example](#3-the-sign-in-example) | the repository, Node.js, the HI server login and an API key | demos where the login and the model are entered on the page |
-| [4. The minifabric example](#4-the-minifabric-example) | the repository and Node.js | demos with the nobilia library, without a login or an API key |
+| [4. The minifabric example](#4-the-minifabric-example) | a browser | demos with the nobilia library, without a login or an API key |
 
 Ask the team that runs the HI MCP for the API key of a chat model.
 
@@ -113,15 +113,16 @@ a chat. The chat runs in the page.
 
 ### 3. The sign-in example
 
-It is published on GitHub Pages — open <https://roomle-dev.github.io/roomle-hi-example/>; you need
-only a browser. Or run it in the repository folder:
+It is published on GitHub Pages — open <https://roomle-dev.github.io/roomle-hi-example/> and choose
+**HI Sign-in Example**; you need only a browser. Or run it in the repository folder:
 
 ```bash
 npm install
 npm run start:sc
 ```
 
-The browser opens `http://localhost:3300` with a sign-in page. Enter the user and password of the HI
+The browser opens the start page `http://localhost:3300`; **HI Sign-in Example** opens the sign-in
+page `http://localhost:3300/hi-sc/`. Enter the user and password of the HI
 server and, if your login has more than one backend, the backend ID; the library is optional when the
 backend has one, and for the chat
 select the provider and enter the exact model ID and its API key. **Start planning** opens the planner; the button at the bottom opens the
@@ -135,14 +136,11 @@ visit. Each field can also be prefilled by a query parameter of its name, for ex
 
 ### 4. The minifabric example
 
-Run it in the repository folder:
+It is published on GitHub Pages — open <https://roomle-dev.github.io/roomle-hi-example/> and choose
+**nobilia Minifabrik Example**. Or run it in the repository folder with `npm run start:sc` and
+choose it on the start page (`http://localhost:3300/nobilia-minifabrik/`).
 
-```bash
-npm install
-npm run start:minifabric
-```
-
-The browser opens `http://localhost:3400` with the planner and the library `nobilia_Minifabrik`. It
+The planner opens with the library `nobilia_Minifabrik`. It
 needs no login and no API key: the library, the prices and the chat (`gpt-6-astra`) go through
 Roomle's demo proxy, which holds the credentials. To test with your own credentials, enter the API
 key, library, subscription and endpoint in the settings panel on the left and press **Reload**.

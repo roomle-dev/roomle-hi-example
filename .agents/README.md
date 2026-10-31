@@ -136,7 +136,9 @@ status block where one is present.
 
 One document per bug: root-cause analysis written **before** the fix, closed out **after** it.
 
-No bug analysis is open.
+| Document | Status | Last touched |
+|---|---|---|
+| [Kitchen 5: island orientation, back-panel construction and correction feedback](bug-analysis/kitchen-5-island-orientation-and-back-panel.md) | Open | 2026-10-31 |
 
 ### Feature Analyses
 

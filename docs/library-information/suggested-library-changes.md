@@ -6,8 +6,13 @@
 > [`.agents/backlog/library-issues.md`](../../.agents/backlog/library-issues.md)
 
 The texts to paste into the library: the complete description of every article and the `desc` of
-every attribute and value. An article description holds at most 1000 characters; the count is in the
-heading of each. Every text stays here once the library carries it, with its status.
+every attribute, value and module. An article description holds at most 1000 characters; the count
+is in the heading of each.
+
+Before adding a suggestion, search this document by the item's ID (and value where applicable)
+and verify whether a suggestion already exists. **Only one suggested description per item.**
+Revise the existing entry in place instead of adding another description or section for the same
+item. Keep the entry after it is applied; revise that entry when a further change is proposed.
 
 Statuses compare the texts with the Furniture_Smith backend `HI_PRE_Roomle_Milestone_2`, in English:
 the [article list](article.json) and [master data](master-data.json), plus the unfiltered backend
@@ -16,7 +21,7 @@ carries the description; it does not mean the underlying calculation issue is re
 
 ## Overview
 
-| Section | Articles or attributes | Status |
+| Section | Articles, attributes or modules | Status |
 |---|---|---|
 | [1.1 Sink base units](#11-sink-base-units) | `SUT60`, `SUBA60`, `SUB2A90`, `ESUT60`, `ESUB2A90` | applied |
 | [1.2 Articles with two doors](#12-articles-with-two-doors) | `H2TB60`, `HWR_HB600T2`, `U2TB90`, `O2TB90`, `US2TB90`, `EU2TB90` | applied |
@@ -25,7 +30,7 @@ carries the description; it does not mean the underlying calculation issue is re
 | [1.5 Width-dependent tall-unit doors](#15-width-dependent-tall-unit-doors) | `HTB60` | applied |
 | [1.6 Adjustable shelves](#16-adjustable-shelves) | `AdjShelves` | applied |
 | [1.7 Tall oven housing](#17-tall-oven-housing) | `HOTS2AB60` | applied |
-| [1.8 Island back panel](#18-island-back-panel) | `RWV` | applied |
+| [1.8 Island back panel](#18-island-back-panel) | `RWV` | proposed; construction and height clarification not applied |
 | [2.1 Colour values](#21-colour-values) | the colour list of `mod_FrontColor`, `mod_CarcaseColor`, `mod_UprightColor` and the other colour attributes | open |
 | [2.2 Front program](#22-front-program) | `mod_FrontProgram` | Modern applied; Tradition sequencing proposed |
 | [2.3 Carcase colours](#23-carcase-colours) | `mod_CarcaseColor`, `mod_CarcaseOutsideColor` | applied |
@@ -39,6 +44,7 @@ carries the description; it does not mean the underlying calculation issue is re
 | [2.11 Shelf descriptor](#211-shelf-descriptor) | `mod_ShelfadjDescriptor` | text applied; actual format and example open |
 | [2.12 Oven article codes](#212-oven-article-codes) | `mod_OvenId1`, `mod_OvenId2`, `mod_OvenId3` | applied |
 | [2.13 Island back panel length](#213-island-back-panel-length) | `mod_IslandBackwallWidth` | applied |
+| [3.1 Island back panel construction](#31-island-back-panel-construction) | `mr_IslandBackwall` | proposed |
 
 ## 1. Article descriptions
 
@@ -401,38 +407,30 @@ Select when a built-in oven at working height is requested. The unit carries one
 
 ### 1.8 Island back panel
 
-**Status.** Applied verbatim ([library issue 23](../../.agents/backlog/library-issues.md#23-the-island-back-panel-names-no-peninsula)).
-The desc of the length attribute is [2.13](#213-island-back-panel-length).
+**Status.** Proposed, not applied. The library carries the peninsula and length guidance
+([library issue 23](../../.agents/backlog/library-issues.md#23-the-island-back-panel-names-no-peninsula));
+the construction and height clarification is proposed. The desc of the length
+attribute is [2.13](#213-island-back-panel-length); the module proposal is
+[3.1](#31-island-back-panel-construction).
 
-`RWV` (DP25KI) — 988 characters:
+The suggested description names the separate horizontal cap and the meaning of total height in `FUNCTION`
+and `AI_SELECTION_HINT`, which the compact article catalog retains. It keeps the length setting
+explicit there too. A flush cap and a deliberately raised ledge remain possible; the text does not
+promise a continuous generated worktop or automatic height alignment. This proposal changes the
+description only.
+
+`RWV` (DP25KI) — 956 characters:
 
 ```
-FUNCTION:
-Decorative back panel for a row of base units that stands free in the room: a kitchen island or a peninsula.
-
-PURPOSE:
-Closes the backs of base units that face the room, so the row looks finished from all sides.
-
-TYPICAL_PLACEMENT:
-Behind an island or a peninsula, covering the backs of its base units along the whole row.
-
-REQUIREMENTS:
-Mounted back to back with the base units of the row. Its length along the row is mod_IslandBackwallWidth, not mod_Width: the length of the row it covers, the widths of its base units added up.
-
-RECOMMENDED_NEIGHBOURS:
-Island and peninsula base units, seating modules.
-
-RESTRICTIONS:
-Cladding only; no storage. Not for a row against a wall.
-
-STYLE_COMPATIBILITY:
-Finishing component. Matches the style of the kitchen it completes.
-
-SEARCH_KEYWORDS:
-island back panel, peninsula back panel, rear cladding, cover panel
-
-AI_SELECTION_HINT:
-Select for every island or peninsula whose base units show their backs to the room, as long as that row.
+FUNCTION: Rear finishing unit for an island or peninsula: a vertical panel with a separate horizontal cap. Default total height 1000 mm can form a raised ledge.
+PURPOSE: Closes exposed cabinet backs.
+TYPICAL_PLACEMENT: Back to back with the base-unit row.
+REQUIREMENTS: Length is mod_IslandBackwallWidth, not mod_Width: sum the cabinet widths. For a flush top, set total height to the actual worktop top height above the panel bottom. mod_Depth sets cap depth; mod_PaneltopThk cap thickness.
+RECOMMENDED_NEIGHBOURS: Island and peninsula base units.
+RESTRICTIONS: No storage or automatic height alignment.
+STYLE_COMPATIBILITY: Kitchen finishing component.
+SEARCH_KEYWORDS: island back panel, peninsula, rear cladding, top cap.
+AI_SELECTION_HINT: Match the image's panel-and-cap profile. mod_Height includes the cap; use the actual worktop height for a flush top. Set mod_IslandBackwallWidth to the row length. The cap is separate from the generated worktop.
 ```
 
 ## 2. Attribute descriptions
@@ -646,3 +644,20 @@ The article's desc is [1.8](#18-island-back-panel).
 | Attribute | Name | `desc` before | Proposed `desc` |
 |---|---|---|---|
 | `mod_IslandBackwallWidth` | Width | Width of the island backwall | Length of the island back panel along the row of base units it covers, in mm. Set it to the length of that row: the widths of its base units added up. The panel's length is this attribute, not mod_Width. |
+
+## 3. Module descriptions
+
+### 3.1 Island back panel construction
+
+**Status.** Proposed, not applied.
+
+**Module.** `mr_IslandBackwall` (Island backwall), the root module of `RWV`.
+
+The construction and height semantics belong to this module and its article. The shared
+`mod_Height` and `mod_Depth` descriptions stay general because other modules use them too. The
+length attribute's description in [2.13](#213-island-back-panel-length) already names the length
+control and needs no revision for this proposal.
+
+| Module | `desc` in the library | Proposed `desc` |
+|---|---|---|
+| `mr_IslandBackwall` | Module for island backwall | Rear finishing unit for a freestanding base-unit row. Builds a vertical panel and a separate horizontal cap. mod_Height is the total height from the element bottom to the cap top. mod_Depth is the cap depth and mod_PaneltopThk its thickness. Cap height does not follow the generated worktop automatically. |

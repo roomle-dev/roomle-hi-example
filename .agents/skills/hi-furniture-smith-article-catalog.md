@@ -71,9 +71,11 @@ node .agents/scripts/generate-article-catalog.js
 ### Step 3: Check the suggested library changes
 
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md) keeps
-every `desc` change suggested to the library, applied or not, with its status. Compare each change
-that is not applied yet with the fetched articles and master data. When the library carries it, set
-its status to applied and name what differs from the proposal; never delete the change. Then update
+one suggested `desc` per item, applied or not, with its status. Before adding a suggestion, search
+by the item's ID and verify whether one already exists. Revise an existing entry in place; never
+add a second description for the same item. Keep the entry after it is applied. Compare each
+suggestion that is not applied yet with the fetched articles and master data. When the library
+carries it, set its status to applied and name what differs from the proposal. Then update
 the **Status** of its issue in [`library-issues.md`](../backlog/library-issues.md). An issue the
 library carries all of is never removed: it stays in the table of the issues solved by descriptions,
 its **Status** says what the library carries.

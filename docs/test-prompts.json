@@ -482,6 +482,16 @@
           "title": "Kitchen for a family with two kids",
           "plan": "default-room",
           "prompt": "create a kitchen for a family with 2 kids"
+        },
+        {
+          "id": "kitchen-turn-island",
+          "title": "Kitchen: turn the island without rebuilding it",
+          "plan": "default-room",
+          "prompt": [
+            "Create an L-shaped kitchen in the back right corner: a tall oven cabinet and sink along the back wall, a hob along the right wall, and a separate island with three 60 cm base cabinets parallel to the back-wall run. Face the island cabinet fronts toward the kitchen aisle and finish its exposed rear with a panel flush with the worktop. Use matching wood fronts and a dark worktop. Decide open details yourself.",
+            "Turn only the existing island 180 degrees around its centre. Keep its cabinets and finishes and do not rebuild it."
+          ],
+          "expect": "turn 1 creates the described kitchen layout with an island parallel to the sink/tall-unit run; turn 2 uses point-form place-group on that same group for a half turn about its centre, keeping its centre, article-root IDs, docking and materials; the island axis stays parallel and the front/back sides exchange; no delete-group or create-or-replace-groups for the requested turn"
         }
       ]
     },
@@ -565,6 +575,13 @@
           "plan": "living-room",
           "prompt": "add a sideboard to the front wall and a low TV unit to the back wall",
           "expect": "create-or-replace-groups creates two groups, in one batched call or separate calls, each with a placement by wall: one sideboard group on the front wall and one low TV unit group on the back wall, both inside the room"
+        },
+        {
+          "id": "media-unit-facing-armchairs-middle-wall",
+          "title": "Media unit facing the armchairs on the wall in the middle of the room",
+          "plan": "living-room",
+          "prompt": "Add a media unit facing the armchairs to the wall in the middle of the room",
+          "expect": "one create-or-replace-groups call placing a media unit group against the wall in the middle of the room (wall 20 at x 1810, facing rotation 270) facing the armchairs; inside the room, overlapping no obstacle"
         }
       ]
     },
@@ -682,16 +699,6 @@
           "image": "docs/images/kitchen-5.png",
           "prompt": "Recreate this kitchen, but make the rear panel and its cap on the outside of the island 1000 mm high as a deliberately raised ledge. Keep the island orientation shown.",
           "expect": "the island stays parallel to the sink/tall-unit run with its working side facing the kitchen aisle; the outside rear component is 1000 mm high and remains above the worktop as explicitly requested, without an automatic flush-height correction or rejection"
-        },
-        {
-          "id": "image-kitchen-5-turn-island",
-          "title": "Kitchen image 5: turn the island without rebuilding it",
-          "plan": "default-room",
-          "prompt": [
-            "Create an L-shaped kitchen in the back right corner: a tall oven cabinet and sink along the back wall, a hob along the right wall, and a separate island with three 60 cm base cabinets parallel to the back-wall run. Face the island cabinet fronts toward the kitchen aisle and finish its exposed rear with a panel flush with the worktop. Use matching wood fronts and a dark worktop. Decide open details yourself.",
-            "Turn only the existing island 180 degrees around its centre. Keep its cabinets and finishes and do not rebuild it."
-          ],
-          "expect": "turn 1 creates the described kitchen-5 layout with an island parallel to the sink/tall-unit run; turn 2 uses point-form place-group on that same group for a half turn about its centre, keeping its centre, article-root IDs, docking and materials; the island axis stays parallel and the front/back sides exchange; no delete-group or create-or-replace-groups for the requested turn"
         }
       ]
     },

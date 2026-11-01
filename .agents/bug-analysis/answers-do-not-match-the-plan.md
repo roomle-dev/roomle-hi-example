@@ -1,10 +1,11 @@
 # Answers do not match the plan
 
 > **Type**: Bug Analysis  
-> **Status**: Open  
+> **Status**: Open — the fix is implemented and verified on the working branch, and the analysis stays open until it lands on the planner branch (`release/bo-test`) or `master`; the release verification is recorded here then, and ["cleanup analyses"](../skills/hi-analysis-cleanup.md) closes and deletes it  
 > **Date**: 2026-11-01  
-> **Backlog**: [Where Mistral Large falls short of the prompts](../backlog/mistral-large-prompt-issues.md), issue 10 ("Answers do not match the plan")  
-> **Base**: roomle-hi-example `analysis/answers-do-not-match-the-plan` (from `master` `4a93dde`); roomle-ui `feat/hi-planning-assistant-lightweight` (`5bef43482`)
+> **Backlog**: [Where Mistral Large falls short of the prompts](../backlog/mistral-large-prompt-issues.md), issue 10 ("Answers do not match the plan") — removed when the fix was implemented, per [the backlog rule](../backlog/README.md)  
+> **Base**: roomle-hi-example `analysis/answers-do-not-match-the-plan` (from `master` `4a93dde`); roomle-ui `feat/hi-planning-assistant-lightweight` (`630e81c3a`)  
+> **Fix**: roomle-ui `feat/hi-planning-assistant-lightweight` `630e81c3a` — every group of `get-plan-context` and of every tool result carries read-only `standsAt` (wall with `fromEndMm` span, corner with its two walls, or point, with `bottomMm`/`topMm`), computed by `standsAtOfGroup` (`hi-tool-hints.ts`) and attached in `inPlacementFrame` (`hi-tool-commands.ts`), read-only on resubmission (`hi-tool-payload.ts`); the served text and the system prompt name it; unit tests in `placement-frame-test.ts`, `create-or-replace-groups-input-test.ts` and `hi-mcp-server-test.ts` plus the schema fixture; durable outcome in roomle-ui D138 of `hi-tools-behaviour.md` and in `hi-tools-reference.md`. Verified with `mistral:mistral-large-4` (8 tests) against the local dev planner — see §6
 
 **Affected repositories**
 
@@ -128,9 +129,5 @@ No change to `glue-logic.ts`, the planner methods or the library.
 
 ## 6. Validation
 
-- Unit tests of 4 pass.
-- Then "test the mcp" with `mistral:mistral-large-latest` on the issue-10 runs (09, 22, 24, 42, 43,
-  44, 46, 47, 01) and with `mistral:mistral-large-4` on large-4 31: every answer names the wall,
-  corner, stretch and height the result's `standsAt` states, and the units and colours from the
-  result's `roots`/`attributes`/`corrections`/`notLoaded` — no answer names a wall the group does
-  not stand at.
+- Unit tests: 1753 pass in `packages/homag-intelligence` (34 files, vitest from `packages/web-sdk`), including the new `describe('where a group stands, in the words of the plan context')` of 6 tests, the read-only resubmission test and the served-text test; the planner-core suite that reads the updated fixture passes (159 tests); oxlint and tsc clean.
+- Executed with `mistral:mistral-large-4` on 2026-11-01 against the local roomle-ui dev server (`feat/hi-planning-assistant-lightweight` `630e81c3a`, `--dev`), session `.temp/result/mcp-test-verify-stands-at-large4-2026-11-01_19-22-45` — the 8 issue-10 tests (`place-group-move-kitchen`, `edit-delete-group`, `edit-insert-below-wall-units` (large-4 31), `obstacle-back-wall-beside-the-sofa`, `kitchen-back-right-corner`, `four-cabinets-back-wall`, `closets-two-wardrobes-corner`, `media-unit-left-wall`), `randomTests: 0`: all 8 runs exit 0 with no errors, `standsAt` is in every served plan context and tool result (e.g. the corner kitchen as `{ placedIn: 'corner', corner: 'back right', walls: ['right wall', 'back wall'], bottomMm: 0, topMm: 2200 }`), and every final answer names the place in its words and matches the final plan — `01` answers "stands at the left wall, fromEndMm 2600–4400, 0–2200 mm", `07` quotes `standsAt` verbatim, and the old large-4 31 slip (the moved wall unit called "above the fridge") is gone: the answer repeats the hint that the wall unit above the fridge moved with the drawer unit. No answer names a wall the group does not stand at.

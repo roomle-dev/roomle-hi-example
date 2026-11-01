@@ -120,6 +120,15 @@ at two walls, and a wall unit names the wall it hangs on; a root module at no wa
 island, carries none (D113). Every group a tool returns carries it; a resubmitted group's `wall` is
 ignored.
 
+**Where a group stands**: every group a tool returns or `get-plan-context` lists carries `standsAt`,
+where it stands in the words of the plan context — at one wall `placedIn: 'wall'` with the wall's
+`name` and its `fromEndMm` span along it (measured from the wall's end, like the obstacles'
+`fromEndMm`), at a room corner `placedIn: 'corner'` with the corner's `name` and its two `walls`,
+anywhere else `placedIn: 'point'`, each with `bottomMm`/`topMm` when the group has a calculated
+height, so a group of wall units says it hangs on the wall instead of standing on the floor. The
+answer repeats `standsAt` instead of deriving the place from `position`'s coordinates (D138). A
+resubmitted group's `standsAt` is ignored.
+
 **Not built**: a root module the library could not calculate — after an edit in the planner, in a
 loaded plan or after an undo (D95) — carries `calculationError`, the first line of the library's
 message, and so does a group whose own calculation failed. The log messages stay withheld (D9). The

@@ -17,7 +17,7 @@ reproduce and test them with `mistral-large-latest` (the alias; the Mistral API 
 
 **Validation.** Every issue is checked against the planner build the example loads
 (`@roomle/embedding-lib@0.0.0-dev-4c2797a`, roomle-ui `release/bo-test`): none of the directions is
-in the served text, the input schemas, the results or the hints as they stand, so the other 12 stay open. Reproducibility is rated per issue below and in the overview by the
+in the served text, the input schemas, the results or the hints as they stand, so the other 10 stay open. Reproducibility is rated per issue below and in the overview by the
 runs that show it of the affected model: high — 9 or more runs, medium — 3 to 8, low — 1 or 2.
 
 The chat model `mistral-large-latest` fulfils far fewer prompts than the GPT models: 23 pass,
@@ -48,7 +48,7 @@ served text ([library-neutral](../../AGENTS.md#library-neutral)), and none of th
 not with Mistral Large 4, which is the model `mistral-large-4` (`mistral-large-4-0`) and the
 launcher's provider name `mistral-large-4`. The payload, placement and id issues (1–3, 5–7, 9) do
 not show in the 52 runs of `mistral-large-4` (its image tests did not run); the tool choice of an
-attributes nobody asked for (8) and the answers (10) remain, and the images of a tool
+attributes nobody asked for (8) remains, and the images of a tool
 result (11), the hinge of a new row end (12) and the speed (13) come with it.
 
 ## Overview
@@ -62,7 +62,6 @@ result (11), the hinge of a new row end (12) and the speed (13) come with it.
 | 7 | [Rows and unit counts do not fit the request or the wall](#7-rows-and-unit-counts-do-not-fit-the-request-or-the-wall) | 5 | 0 | medium | roomle-ui — results | Say in the result when a group reaches past its wall or out of the room |
 | 8 | [Attribute ids and values are guessed](#8-attribute-ids-and-values-are-guessed) | 6 | 2 | medium | roomle-ui — attribute commands; served text | Resolve a value name to the value and say so; check what invites unrequested materials |
 | 9 | [Ids are guessed before the plan is read](#9-ids-are-guessed-before-the-plan-is-read) | 6 | 0 | medium | roomle-ui — group lookup | Use the only group of the plan for an unknown group id and say so |
-| 10 | [Answers do not match the plan](#10-answers-do-not-match-the-plan) | 9 | 1 | high | MCP server — results — analysed in [answers-do-not-match-the-plan.md](../bug-analysis/answers-do-not-match-the-plan.md) (open) | Name in the result where each group stands, in the plan context's words |
 | 11 | [Every look at the plan ends the turn](#11-every-look-at-the-plan-ends-the-turn) | — | 11 | high | embedding-lib — planning assistant | Move the images of a tool result into a user message for Mistral models |
 | 12 | [The door at a new row end keeps its hinge](#12-the-door-at-a-new-row-end-keeps-its-hinge) | — | 1 | low | MCP server — served text | Name a delete that leaves the gap among the edits that give a row new ends |
 | 13 | [Turns take minutes](#13-turns-take-minutes) | — | 3 | medium | embedding-lib — planning assistant; MCP server — served text and results | Measure where the time of a turn goes before changing anything |
@@ -194,23 +193,6 @@ say so — the error already names the one fix.
 
 **Reproduce.** `mcp-test-2026-10-17_10-50-12`, mistral-large-latest 21 (`edit-delete-group`).
 **Reproducibility:** medium — 6 of 56 runs of `mistral-large-latest`.
-
-## 10. Answers do not match the plan
-
-**Problem.** The answers name walls the groups do not stand at (09, 22, 24, 43), units that were not
-added (42), images the model misread (44), wall units hanging where they stand on the floor (46,
-47), front colours the plan does not have (01).
-
-**Direction.** Name in the result of a plan-changing tool where each group stands, in the plan
-context's words — the wall, the corner, the stretch along it — so the answer can repeat it instead
-of deriving it from coordinates.
-
-**mistral-large-4.** Its answers match the plan, with one slip: the wall unit that moved with an
-inserted drawer unit is called the one "above the fridge" — it hangs above the drawer unit next to
-the fridge (large-4 31).
-
-**Reproduce.** `mcp-test-2026-10-21_16-59-20`, mistral-large-4 31 (`edit-insert-below-wall-units`).
-**Reproducibility:** high — 9 of 56 runs of `mistral-large-latest` and 1 of 52 of `mistral-large-4`.
 
 ## 11. Every look at the plan ends the turn
 

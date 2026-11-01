@@ -1,10 +1,11 @@
 # Every look at the plan ends the turn
 
 > **Type**: Bug Analysis  
-> **Status**: Open  
+> **Status**: Open — the fix is implemented and verified with the unit tests on the working branch, and the analysis stays open until it lands on the planner branch (`release/bo-test`) or `master`; the release verification is recorded here then, and ["cleanup analyses"](../skills/hi-analysis-cleanup.md) closes and deletes it  
 > **Date**: 2026-11-01  
-> **Backlog**: [Where Mistral Large falls short of the prompts](../backlog/mistral-large-prompt-issues.md), issue 11 ("Every look at the plan ends the turn")  
-> **Base**: roomle-hi-example `analysis/every-look-at-the-plan-ends-the-turn` (from `master` `f1bd307`); roomle-ui `feat/hi-planning-assistant-lightweight` (`630e81c3a`)
+> **Backlog**: [Where Mistral Large falls short of the prompts](../backlog/mistral-large-prompt-issues.md), issue 11 ("Every look at the plan ends the turn") — removed when the fix was implemented, per [the backlog rule](../backlog/README.md)  
+> **Base**: roomle-hi-example `analysis/every-look-at-the-plan-ends-the-turn` (from `master` `f1bd307`); roomle-ui `feat/hi-planning-assistant-lightweight` (`04cca686c`)  
+> **Fix**: roomle-ui `feat/hi-planning-assistant-lightweight` `04cca686c` — the `mistral` case of `loadChatModel` wraps the provider model with `withToolImagesAsUserMessage` (`packages/embedding-lib/src/homag-intelligence/hi-planning-assistant.ts`), so the images of a tool result go into a user message after the tool message and `@ai-sdk/mistral` sends them as `image_url` parts; unit tests in `tests/unit/embedding-lib/homag-intelligence/hi-planning-assistant.spec.ts` (the images of a tool result move into a user message in `doGenerate` and `doStream`, tool results without images stay as they are); living reference in roomle-ui `.agents/homag-intelligence/agent-architecture.md` and in `docs/ai-chat.md` § "Images in tool results". Verified with the unit tests — 140 pass in `tests/unit/embedding-lib/homag-intelligence`, lint and types clean; the re-run of the 11 `mistral-large-4` prompt tests against the local dev planner is still open — see §4
 
 **Affected repositories**
 

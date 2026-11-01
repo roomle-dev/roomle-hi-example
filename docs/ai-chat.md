@@ -242,12 +242,10 @@ In the window (only when the model reads images):
 
 `get-plan-images` returns its two renders as JPEG file parts of the tool
 result, about 0.2 MB of base64 for a kitchen. Anthropic, Google and Azure on the Responses API
-send those to the model as images; on an OpenAI-compatible endpoint (the model proxy) the
-planning assistant moves them into a user message after the tool result. `@ai-sdk/mistral` writes a tool result's content
-as JSON text, and the planning assistant of the embedding-lib does not move the
-images of a Mistral tool result into a user message: a Mistral model gets the
-renders as base64 text, not as images, and the text takes a large part of its
-context. Use a GPT, Claude or Gemini model for plannings that look at the plan.
+send those to the model as images; on an OpenAI-compatible endpoint (the model proxy) and on
+Mistral the planning assistant moves them into a user message after the tool result, because
+Chat Completions takes text only in a tool message — as JSON text there, the renders would take
+a large part of the model's context.
 
 The tools keep their results small for every model: compact JSON without the
 signed image URLs of the master data and the order data

@@ -17,7 +17,7 @@ reproduce and test them with `mistral-large-latest` (the alias; the Mistral API 
 
 **Validation.** Every issue is checked against the planner build the example loads
 (`@roomle/embedding-lib@0.0.0-dev-4c2797a`, roomle-ui `release/bo-test`): none of the directions is
-in the served text, the input schemas, the results or the hints as they stand, so the other 10 stay open. Reproducibility is rated per issue below and in the overview by the
+in the served text, the input schemas, the results or the hints as they stand, so the other 9 stay open. Reproducibility is rated per issue below and in the overview by the
 runs that show it of the affected model: high — 9 or more runs, medium — 3 to 8, low — 1 or 2.
 
 The chat model `mistral-large-latest` fulfils far fewer prompts than the GPT models: 23 pass,
@@ -31,7 +31,11 @@ does, what the investigation should start from and a direction; none is analysed
 `mistral-large-4` passes far more of them: 33 pass, 5 partial, 14 fail of the 52 runs of
 `mcp-test-2026-10-21_16-59-20` (the fixed tests 01–52; the session stopped there, about 3 minutes
 per run). None of its 14 fails is a planning defect: 11 end on the images of `get-plan-images`
-([11](#11-every-look-at-the-plan-ends-the-turn)), 3 on the chat timeout
+(issue 11, removed when its fix was implemented — the planning assistant now moves the images of
+a tool result into a user message for Mistral models, roomle-ui
+`feat/hi-planning-assistant-lightweight` `04cca686c`; analysis
+[Every look at the plan ends the turn](../bug-analysis/every-look-at-the-plan-ends-the-turn.md)),
+3 on the chat timeout
 ([13](#13-turns-take-minutes)); in 9 of the 11 the plan already fulfils the request. Its 5 partial
 runs are issue 12. Issues 1, 2, 3, 5, 6, 7 and 9 do not show in its runs.
 
@@ -62,7 +66,6 @@ result (11), the hinge of a new row end (12) and the speed (13) come with it.
 | 7 | [Rows and unit counts do not fit the request or the wall](#7-rows-and-unit-counts-do-not-fit-the-request-or-the-wall) | 5 | 0 | medium | roomle-ui — results | Say in the result when a group reaches past its wall or out of the room |
 | 8 | [Attribute ids and values are guessed](#8-attribute-ids-and-values-are-guessed) | 6 | 2 | medium | roomle-ui — attribute commands; served text | Resolve a value name to the value and say so; check what invites unrequested materials |
 | 9 | [Ids are guessed before the plan is read](#9-ids-are-guessed-before-the-plan-is-read) | 6 | 0 | medium | roomle-ui — group lookup | Use the only group of the plan for an unknown group id and say so |
-| 11 | [Every look at the plan ends the turn](#11-every-look-at-the-plan-ends-the-turn) | — | 11 | high | embedding-lib — planning assistant; analysis [Every look at the plan ends the turn](../bug-analysis/every-look-at-the-plan-ends-the-turn.md): root cause is the unwrapped `mistral` case of `loadChatModel`, fix proposed on roomle-ui `feat/hi-planning-assistant-lightweight` | Move the images of a tool result into a user message for Mistral models |
 | 12 | [The door at a new row end keeps its hinge](#12-the-door-at-a-new-row-end-keeps-its-hinge) | — | 1 | low | MCP server — served text | Name a delete that leaves the gap among the edits that give a row new ends |
 | 13 | [Turns take minutes](#13-turns-take-minutes) | — | 3 | medium | embedding-lib — planning assistant; MCP server — served text and results | Measure where the time of a turn goes before changing anything |
 
@@ -193,24 +196,6 @@ say so — the error already names the one fix.
 
 **Reproduce.** `mcp-test-2026-10-17_10-50-12`, mistral-large-latest 21 (`edit-delete-group`).
 **Reproducibility:** medium — 6 of 56 runs of `mistral-large-latest`.
-
-## 11. Every look at the plan ends the turn
-
-**Problem.** `mistral-large-4` checks its work with `get-plan-images` after most plan changes, and
-in one run before it plans (large-4 10). The planning assistant passes the renders of the tool
-result to `@ai-sdk/mistral`, which writes them into the prompt as base64 JSON text — 1.2 to 2.0
-million tokens against a context of 1,048,576 — and the turn ends with an error. 11 of 52 runs end
-so (large-4 04, 05, 10, 15, 19, 32, 34, 41, 47, 48, 52); in 9 of them the plan already fulfils
-the request, but the user sees the error instead of the answer, and a conversation ends there: the
-swap of large-4 41 is never sent. Smaller renders fit (large-4 13, 14).
-
-**Direction.** The open Chat item "Images of a tool result for Mistral" of the
-[backlog index](README.md#chat): move the images of a tool result into a user message for Mistral
-models in the planning assistant of the embedding-lib (roomle-ui `hi-planning-assistant.ts`, a
-`wrapLanguageModel` middleware). The tests of a Mistral model measure little else until then.
-
-**Reproduce.** `mcp-test-2026-10-21_16-59-20`, mistral-large-4 04 (`media-unit-left-wall`).
-**Reproducibility:** high — 11 of 52 runs of `mistral-large-4` end on it.
 
 ## 12. The door at a new row end keeps its hinge
 

@@ -40,4 +40,4 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Last touched |
 |---|---|---|
-| [The payload format is guessed: relations and ids the server does not read](guessed-payload-format.md) — backlog [mistral-large-prompt-issues.md](../backlog/mistral-large-prompt-issues.md) issue 1 (removed when implemented); roomle-ui `feat/hi-planning-assistant-lightweight` `31def74f2` | Fixed | 2026-11-01 |
+| [The payload format is guessed: relations and ids the server does not read](guessed-payload-format.md) — backlog [mistral-large-prompt-issues.md](../backlog/mistral-large-prompt-issues.md) issue 1 (removed when implemented); fix on roomle-ui `feat/hi-planning-assistant-lightweight` `31def74f2`, open until it lands on `release/bo-test` or `master` | Open | 2026-11-01 |

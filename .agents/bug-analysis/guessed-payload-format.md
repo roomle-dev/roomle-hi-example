@@ -1,9 +1,9 @@
 # The payload format is guessed: relations and ids the server does not read
 
 > **Type**: Bug Analysis  
-> **Status**: Fixed  
+> **Status**: Open — the fix is implemented and verified on the working branch, and the analysis stays open until it lands on the planner branch (`release/bo-test`) or `master`; the release verification is recorded here then, and ["cleanup analyses"](../skills/hi-analysis-cleanup.md) closes and deletes it  
 > **Date**: 2026-11-01  
-> **Backlog**: [Where Mistral Large falls short of the prompts](../backlog/mistral-large-prompt-issues.md), issue 1 ("The payload format is guessed: relations and ids the server does not read") — removed when the fix was implemented  
+> **Backlog**: [Where Mistral Large falls short of the prompts](../backlog/mistral-large-prompt-issues.md), issue 1 ("The payload format is guessed: relations and ids the server does not read") — removed when the fix was implemented, per [the backlog rule](../backlog/README.md)  
 > **Base**: roomle-hi-example `feat/analyse-guessed-payload-format` (from `master` `f1bd307`); roomle-ui `feat/hi-planning-assistant-lightweight` (`0cfceb693`)  
 > **Fix**: roomle-ui `feat/hi-planning-assistant-lightweight` `31def74f2` — the `posGroups` input schema declares the group and root fields on open objects (`hi-mcp-server.ts`), `readPairRelations` maps the pair forms and `resolveIdRefs` the id variants (`hi-tool-payload.ts`); unit tests in `create-or-replace-groups-input-test.ts` plus the schema fixture; durable outcome in roomle-ui D136 and G50–G53 of `hi-tools-behaviour.md` and in `hi-tools-reference.md`. Verified with `mistral:mistral-large-latest` (16 tests) and `mistral:mistral-large-4` (6 tests) against the local dev planner — see §6
 

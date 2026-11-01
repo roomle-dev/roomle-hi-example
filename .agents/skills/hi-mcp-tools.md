@@ -137,13 +137,16 @@ come from the library's descriptions for single or paired doors; other direction
 module carries, with id, name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`,
 `mod_Height`; the panels `mod_UprightDepth`, `mod_UprightHeight`, the island backwall
 `mod_IslandBackwallWidth`; the range hood `DU` and the TV `SM_TV` have none). A corner article
-(`cornerArticle: true`) also lists `cornerBackLengthsMm`, the lengths of its `LeftBack`/`RightBack`
-docking vectors. A root
+(`cornerArticle: true`) also lists `cornerBackLengthsMm`: an object with the lengths of its
+`LeftBackBottom`/`RightBackBottom` docking vectors in millimetres as the named fields `left` and
+`right`, each present when the article has that vector. A root
 in `groups` carries the same ids among its `attributes`; a group's `position.footprint` gives
 `widthMm`/`depthMm` of the whole group, its `x` and `y` ranges measured from `pos`, the front towards
 `−y`. A group's `position.pos` and `rotationZ` are what a
-placement would name for it: the room point of its back left bottom corner and the rotation of the
-placement, whatever origin the planner keeps the group at — the agent reads back what it placed. A
+placement would name for it: the room point of its back left bottom corner of the whole group — a
+rear panel included; the anchor is never a back panel, whatever the roots order (D133) — and the
+rotation of the placement, whatever origin the planner keeps the group at — the agent reads back
+what it placed. A
 group with two corner articles also carries `position.rootId`, the corner article `pos` belongs to. A unit is resized with `change-module-attribute` and the
 attribute id, never its name.
 
@@ -220,8 +223,9 @@ wall's end. The server loads the group, computes the target from the calculated 
 its measure there when it does not stand as asked (D70), and sets its group materials after the
 last reload (D23). Anywhere else,
 and for a group of wall units only: `placement: { posGroup, posRotationZ, rootId? }` — `posGroup`
-the room point of the group's back left bottom corner (`z` 0 on the floor; a floor point `[x, y]` is
-completed to `[x, y, 0]`), `posRotationZ` the rotation in degrees,
+the room point of the group's back left bottom corner of the whole group, a rear panel included
+(`z` 0 on the floor; a floor point `[x, y]` is completed to `[x, y, 0]`), `posRotationZ` the
+rotation in degrees,
 counter-clockwise as seen from above; `rootId` only with two corner articles, naming the one that
 goes into the corner `posGroup` names. One piece of furniture is one group: relate every further
 article to its neighbour instead of positioning it. `posGroup` is the back left bottom corner for

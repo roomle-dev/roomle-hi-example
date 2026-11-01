@@ -133,9 +133,12 @@ sides, left at the left end and right at the right end as seen from the front. A
 come from the library's descriptions for single or paired doors; other directions stay unchanged
 (D84). Both chats send this reminder in every tool list, also without fetching the authoring rules.
 
-**Article size**: per root module of an article, `dimensions` lists the size attributes with id,
-name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`, `mod_Height`; the panels
-`mod_UprightDepth`, `mod_UprightHeight`; the range hood `DU` and the TV `SM_TV` have none). A root
+**Article size**: per root module of an article, `dimensions` lists the size attributes the root's
+module carries, with id, name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`,
+`mod_Height`; the panels `mod_UprightDepth`, `mod_UprightHeight`, the island backwall
+`mod_IslandBackwallWidth`; the range hood `DU` and the TV `SM_TV` have none). A corner article
+(`cornerArticle: true`) also lists `cornerBackLengthsMm`, the lengths of its `LeftBack`/`RightBack`
+docking vectors. A root
 in `groups` carries the same ids among its `attributes`; a group's `position.footprint` gives
 `widthMm`/`depthMm` of the whole group, its `x` and `y` ranges measured from `pos`, the front towards
 `−y`. A group's `position.pos` and `rotationZ` are what a
@@ -171,7 +174,9 @@ const context = await getPlanContext({ include: ['rooms', 'articles'] });
 
 **Roots**: `{ id, articleId, attributes? }` plus one relation that names the neighbour — `rightOf`,
 `leftOf`, `onTop` (`align`, `gapMm`), `above` (`gapMm`) or `behind`. The server builds the docking
-(`contextData`) from it, including the Top vectors of a wall unit beside a tall unit and the hang
+(`contextData`) from it; a row-less panel docked `behind` a row is anchored by the server at the
+row's start end (the corner of a peninsula leg, else the row's first unit as seen from its front),
+so it closes the row's whole back whichever unit of the row it names, including the Top vectors of a wall unit beside a tall unit and the hang
 gap of a wall unit above a floor unit — see the
 [authoring rules skill](./hi-authoring-rules.md#relations). `contextData` is still accepted; a group
 from `get-plan-context` carries it.

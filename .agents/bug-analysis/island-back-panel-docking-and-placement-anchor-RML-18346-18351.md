@@ -2,7 +2,7 @@
 
 > **Type:** Bug analysis
 >
-> **Status:** Open
+> **Status:** Open — the fix is implemented in roomle-ui `feat/hi-planning-assistant` (decisions D132–D135: row/corner-aware `behind` anchoring, order-independent placement anchor over the whole group, module-carried catalog dimensions with `cornerBackLengthsMm`, named uncarried root overrides), pending the model verification of the tickets' acceptance criteria on bo-test
 >
 > **Date:** 2026-11-01
 >

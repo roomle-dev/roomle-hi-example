@@ -184,6 +184,14 @@ gap of a wall unit above a floor unit — see the
 [authoring rules skill](./hi-authoring-rules.md#relations). `contextData` is still accepted; a group
 from `get-plan-context` carries it.
 
+**Payload format in the schema**: the input schema declares the group fields (`id`, `libraryId`,
+`placement`, `attributes`, `roots`) and the root fields on open objects, so the format is in the
+schema a model reads first. The server also maps the forms a model writes onto them and names each
+mapping in `corrections` (roomle-ui D136): a root's `relation` with a neighbour key (`relatesTo`,
+`relToRootId`, `neighbourId`, `to`, `target`, `targetId`) and a `relations` list on the group
+become the declared relation fields, and a relation naming an id no root carries (`root_1`,
+`ROOT#1`, `#2`) is resolved to the root it spells, else the n-th root of the list.
+
 **Mounting**: choose articles and settings from the library descriptions and attributes; categories
 organize the catalog. Unknown categories retain explicit `above` and `gapMm`; finishing parts
 continue the wall row `rightOf` / `leftOf`. A replace, a placement by wall and `place-group` restore

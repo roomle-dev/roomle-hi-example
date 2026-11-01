@@ -136,7 +136,9 @@ status block where one is present.
 
 One document per bug: root-cause analysis written **before** the fix, closed out **after** it.
 
-None open.
+| Document | Status | Last touched |
+|---|---|---|
+| [The payload format is guessed: relations and ids the server does not read](bug-analysis/guessed-payload-format.md) | Fixed | 2026-11-01 |
 
 ### Feature Analyses
 

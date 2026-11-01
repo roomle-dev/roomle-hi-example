@@ -56,9 +56,10 @@ Access via `get-plan-context` (a default section, or `include: ['articles']`):
       libraryId: string,
       catalog: string,
       cornerArticle: boolean,     // true for an article made for a room corner
+      cornerBackLengthsMm: number[], // a corner article only: the lengths of its LeftBack/RightBack vectors
       rootModules: [{
         module: { id, name, desc },
-        dimensions: [{ id, name, value }],      // size attributes in millimetres (Width, Depth, Height)
+        dimensions: [{ id, name, value }],      // the size attributes the root's module carries, in millimetres
         mainAttributes: [{ id, name, value }],
         dockingVectors: string[],               // docking vector names
         subModules: [{ id, name, desc }]
@@ -89,7 +90,7 @@ relation; the server compiles the docking (`contextData`) from it
 | `rightOf` / `leftOf` | right / left of that unit, as seen from the front | `RightBottom → LeftBottom` / `LeftBottom → RightBottom`; a wall unit beside a tall unit: `RightTop → LeftTop` / `LeftTop → RightTop`, tops flush |
 | `onTop` | stands on that unit — a tall unit or a wall unit, any depth; `align` `left` (default), `right`, `back`; `gapMm` lifts it. On a kitchen base unit a wall unit hangs `above` it and a floor unit continues the row, reported | `LeftTop → LeftBottom`, `RightTop → RightBottom`, `BackTop → BackBottom` |
 | `above` | a wall unit hanging above that floor unit, its top flush with the tall units like every wall unit of the group; `gapMm` sets another gap, the same for every wall unit of the group | `LeftTop → LeftBottom` with the gap that puts its top at the top of the tall units (D35: tall − wall − base `mod_Height`, Furniture_Smith 660) |
-| `behind` | back to back, turned by 180° (an island) | `BackBottom → BackBottom`, flush with that unit at the end where the turned unit's own row starts (D98) |
+| `behind` | back to back, turned by 180° (an island) | `BackBottom → BackBottom` (D98); a row-less unit — a back panel — docked `behind` any unit of a floor row is anchored at the row's start end, so it closes the row's whole back whichever unit it names (D132) |
 
 - Wall units continue `rightOf` / `leftOf` each other. The range hood hangs `above` the hob unit
   with a `gapMm` of its own, and the next wall unit past the hood hangs `above` its own floor unit
@@ -182,7 +183,7 @@ placement: {
 }
 // anywhere else, and for a group of wall units only
 placement: {
-  posGroup: [x, y, z],   // the group's back left bottom corner in the room, mm (z = 0 on the floor)
+  posGroup: [x, y, z],   // the back left bottom corner of the whole group in the room, a rear panel included, mm (z = 0 on the floor)
   posRotationZ: number,  // degrees, counter-clockwise as seen from above
   rootId: string         // optional - only with two corner articles, see below
 }
@@ -195,9 +196,10 @@ placement: {
   The server loads the group, computes the target from the calculated group, moves a target that
   overlaps another group along the wall, and reloads the group there.
 
-- **Point** (the second form): `posGroup` is the room point of the group's back left bottom corner; for a group of
-  wall units only, its z is their mounting height; a floor point `[x, y]` is completed to `[x, y, 0]`.
-  In a room corner it is the corner point. It
+- **Point** (the second form): `posGroup` is the room point of the group's back left bottom corner — of the whole
+  calculated group, a rear panel behind the row included; the anchor is never a back panel, whatever the roots order
+  (D133); for a group of wall units only, its z is their mounting height; a floor point `[x, y]` is completed to
+  `[x, y, 0]`. In a room corner it is the corner point. It
   holds for every article: the server places the anchor by the back left bottom corner of its
   docking vectors, also where its origin lies elsewhere (the centre of a range hood, the arm of a
   corner article). A returned group's `position.pos` and `rotationZ` are read the same way; with two
@@ -255,7 +257,7 @@ placement: {
 
 ### Moving a group
 
-For a freestanding move or turn, use `place-group` with `groupId`, `posGroup: [x, y, z]` and `posRotationZ`, plus `rootId` for one of two corner roots. The point is the same back left bottom docking corner as a new placement; turning about a fixed centre requires adjusting it. The tool keeps the group id, docking, generated roots and finishes. A replacement preserves its world docking frame even if recalculation changes the local origin.
+For a freestanding move or turn, use `place-group` with `groupId`, `posGroup: [x, y, z]` and `posRotationZ`, plus `rootId` for one of two corner roots. The point is the same back left bottom corner of the whole group as a new placement; turning about a fixed centre requires adjusting it. The tool keeps the group id, docking, generated roots and finishes. A replacement preserves its world docking frame even if recalculation changes the local origin.
 
 An existing group is moved with `place-group`, not with a placement: the wall by side label or
 index, `alignment` `start`, `center` (default) or `end` along it, or the side label of the
@@ -294,7 +296,7 @@ built is an error. Every guard and correction:
 
 ### Corrected and reported in `corrections` (the group is loaded):
 - A root without a relation (in a group with relations) — put into the row of its kind; a relation to an unknown root or to itself, or one that closes a ring — ignored or dropped
-- A floor unit `above` a unit — put `rightOf` it; a wall unit `rightOf` / `leftOf` a base unit — hung `above` it; `behind` a corner article — ignored
+- A floor unit `above` a unit — put `rightOf` it; a wall unit `rightOf` / `leftOf` a base unit — hung `above` it; `behind` a corner article with legs on both sides or none — ignored (a corner article that starts exactly one leg takes the panel on that leg's `LeftBackBottom`/`RightBackBottom`, D132)
 - `gapMm` beside a unit, an unknown `align`, a second relation field — ignored
 - `pos`, `rotationY` or `rotationZ` on a group, `articlePos`, `rotationY` or `rotationZ` on a root — dropped, naming the fields that were sent
 - `repositioningData` on a group — taken as the placement

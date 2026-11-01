@@ -97,7 +97,7 @@ to back with another one is a root of the same group.
 
 **As `get-plan-context` returns it** (a valid `create-or-replace-groups` payload as it is):
 - `id`, `libraryId`, `attributes` — group settings and a material for the whole group
-- `position` — read-only: `pos` (the room point of its back left bottom corner), `rotationZ`, `footprint` (`x` and `y` ranges from `pos`, the front towards `−y`)
+- `position` — read-only: `pos` (the room point of its back left bottom corner — of the whole group, a rear panel included), `rotationZ`, `footprint` (`x` and `y` ranges from `pos`, the front towards `−y`)
 - `roots` — per root its `id`, `articleId`, input `attributes`, `contextData` (the docking, vector names only), and read-only facts: `articleName`, `desc`, `category`, `isGenerated` (worktop, toe kick — the library generates them), `dockingVectors`, `freeDockingVectors`, `subModules`. No root positions
 
 **As a new group is authored:**
@@ -124,7 +124,7 @@ Every root after the first names one neighbour with one relation — `rightOf`, 
 - `roomIndex` — optional, 0 by default
 
 Anywhere else, and for a group of wall units only:
-- `posGroup` — [x, y, z] in millimetres: the room point of the group's back left bottom corner, `z` 0 on the floor
+- `posGroup` — [x, y, z] in millimetres: the room point of the group's back left bottom corner of the whole group (a rear panel included), `z` 0 on the floor
 - `posRotationZ` — rotation of the group in degrees, counter-clockwise as seen from above
 - `rootId` — optional, only with two corner articles: the one that goes into the corner `posGroup` names
 
@@ -167,8 +167,8 @@ A new group is positioned in the call that creates it: at a wall or in a room co
 calculated group, as `place-group` does —, anywhere else by `placement: { posGroup, posRotationZ,
 rootId? }`, one point and one rotation.
 
-- `posGroup` is the room point of the group's back left bottom corner; in a room corner it is the
-  corner point.
+- `posGroup` is the room point of the group's back left bottom corner of the whole group, a rear
+  panel included; in a room corner it is the corner point.
 - One piece of furniture is one group: every further article is a root module of the same group, never a
   separately positioned group. Each article after the first names its neighbour with one relation (`rightOf`,
   `leftOf`, `onTop`, `above`, `behind`), and the server builds the docking from it — see

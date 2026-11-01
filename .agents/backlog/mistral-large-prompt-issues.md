@@ -33,7 +33,7 @@ does, what the investigation should start from and a direction; none is analysed
 per run). None of its 14 fails is a planning defect: 11 end on the images of `get-plan-images`
 ([11](#11-every-look-at-the-plan-ends-the-turn)), 3 on the chat timeout
 ([13](#13-turns-take-minutes)); in 9 of the 11 the plan already fulfils the request. Its 5 partial
-runs are issues 4 and 12. Issues 1, 2, 3, 5, 6, 7 and 9 do not show in its runs.
+runs are issue 12. Issues 1, 2, 3, 5, 6, 7 and 9 do not show in its runs.
 
 A run number alone names a run of `mcp-test-2026-10-17_10-50-12` (`mistral-large-latest`);
 "large-4 NN" names run NN of `mcp-test-2026-10-21_16-59-20`, whose test file numbers the tests
@@ -48,7 +48,7 @@ served text ([library-neutral](../../AGENTS.md#library-neutral)), and none of th
 not with Mistral Large 4, which is the model `mistral-large-4` (`mistral-large-4-0`) and the
 launcher's provider name `mistral-large-4`. The payload, placement and id issues (1–3, 5–7, 9) do
 not show in the 52 runs of `mistral-large-4` (its image tests did not run); the tool choice of an
-edit (4), attributes nobody asked for (8) and the answers (10) remain, and the images of a tool
+attributes nobody asked for (8) and the answers (10) remain, and the images of a tool
 result (11), the hinge of a new row end (12) and the speed (13) come with it.
 
 ## Overview
@@ -57,7 +57,6 @@ result (11), the hinge of a new row end (12) and the speed (13) come with it.
 |---|---|---|---|---|---|---|
 | 2 | [One piece of furniture is sent as several groups](#2-one-piece-of-furniture-is-sent-as-several-groups) | 8 | 0 | medium | roomle-ui — HI tool command | Merge the groups of one call whose relations name each other's roots |
 | 3 | [Wall units in a group of their own stand on the floor](#3-wall-units-in-a-group-of-their-own-stand-on-the-floor) | 4 | 0 | medium | roomle-ui — wall placement | Hang a group of wall units only at the wall-unit height, or say that it stands on the floor |
-| 4 | [Edits are made with the wrong tool](#4-edits-are-made-with-the-wrong-tool) | 9 | 4 | high | MCP server — tool descriptions; roomle-ui — results | Open the edit tools' descriptions with the user's words; a hint when a replace is an edit |
 | 5 | [Obstacle hints are handed to the user instead of acted on](#5-obstacle-hints-are-handed-to-the-user-instead-of-acted-on) | 4 | 0 | medium | roomle-ui — hints | Name the placement that clears the obstacle on the group's own wall |
 | 6 | [A described wall or room is missed](#6-a-described-wall-or-room-is-missed) | 3 | 0 | medium | MCP server — plan context | Describe each wall in the plan context: free stretches, openings, a sloping ceiling |
 | 7 | [Rows and unit counts do not fit the request or the wall](#7-rows-and-unit-counts-do-not-fit-the-request-or-the-wall) | 5 | 0 | medium | roomle-ui — results | Say in the result when a group reaches past its wall or out of the room |
@@ -109,32 +108,6 @@ at 1480 mm (large-4 51).
 
 **Reproduce.** `mcp-test-2026-10-17_10-50-12`, mistral-large-latest 02 (`four-cabinets-back-wall`).
 **Reproducibility:** medium — 4 of 56 runs of `mistral-large-latest`.
-
-## 4. Edits are made with the wrong tool
-
-**Problem.** The model re-sends a whole group with `create-or-replace-groups` for edits that have
-their own tool: a move (09), a width (15, 31 — exchanged for another article), an exchange (23), one
-more unit (18, 42, 54, 55). A replace without a placement keeps the group's origin, so a reversed or
-extended row runs through a wall (09, 55); a new group with the id of an existing unit duplicates
-it (18); a new group of one wall cabinet lands at the plan origin (54). Run 30 deletes with the
-compacting delete where the test expects the in-place delete.
-
-**Direction.** Open each edit tool's description with the words a user says for it — "move",
-"wider" or "900 mm wide", "add one more", "above" — as `delete-article-in-place` and
-`delete-article-and-compact` do (D58). A replace of an existing group that only adds or reorders
-its roots could answer with a hint naming the edit tool. Say in the result when a replaced group's
-units now stand outside the room.
-
-**mistral-large-4.** The edits use their own tools — move, width, exchange, insert, swap, merge,
-the interior fittings — with two exceptions. "Delete the middle unit" closes the gap with
-`delete-article-and-compact` where D58 makes the in-place delete the default (large-4 44, 45, 46;
-the same words give the in-place delete in large-4 35). A widening the library cannot calculate
-is answered with another kind of article: Error 14019 for a tall unit at 900 mm, and the model
-exchanges it for a 900 mm base cabinet instead of correcting the door direction it keeps
-(large-4 36) — the correction ends "change the failing values or replace the article".
-
-**Reproduce.** `mcp-test-2026-10-21_16-59-20`, mistral-large-4 44 (`undo-last-change`).
-**Reproducibility:** high — 9 of 56 runs of `mistral-large-latest` and 4 of 52 of `mistral-large-4`.
 
 ## 5. Obstacle hints are handed to the user instead of acted on
 

@@ -29,7 +29,7 @@ embedding-lib.
 
 | File | Covers |
 | ---- | ------ |
-| `minimal-hi-example/tests/start.test.js` | starts the real launcher on unused ports, with a model and a dummy key and without a model: the planning assistant config of the model, `no-store`, the 404 without a model, the 403 for a foreign Host; SIGTERM/SIGINT to only the launcher PID release the page port (POSIX; no model request) |
+| `minimal-hi-example/tests/start.test.js` | starts the real launcher on unused ports, with a model and a dummy key and without a model: the planning assistant config of the model, `no-store`, the 404 without a model, the 403 for a foreign Host; the opened URL carries `chat=true` with a model and `chat=false` without one; a taken requested port falls through to the next free port; SIGTERM/SIGINT to only the launcher PID release the page port (POSIX; no model request) |
 | `hi-sc-example/tests/model-config.test.ts` | provider, model ID and key of the sign-in example → the `PlanningAssistantConfig` (`node --experimental-strip-types --test`) |
 | `hi-sc-example/tests/fields-cookie.test.ts` | the sign-in cookie of the sign-in example: the fields stored and read back, the cookie attributes |
 | `hi-sc-example/tests/query-options.test.ts` | the query parameters of the sign-in example → the planner options |
@@ -251,7 +251,8 @@ Playwright and intercepted test pages to navigate the main page and planner fram
 is pending. They make no model requests and require the existing Playwright installation in
 `.agents/scripts/`; the generated-case tests also require `jq`.
 
-When an interactive `npm start` holds port 3000, run with `EXAMPLE_PORT` set to a free port.
+The launcher takes the next free port itself when port 3000 is held by an interactive `npm start`
+(it prints the port it uses); `EXAMPLE_PORT` pins the requested port.
 
 ### Per-request byte measurements
 

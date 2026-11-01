@@ -8,6 +8,7 @@
 
   <body>
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');
       body {
         overflow: hidden;
         width: 100%;
@@ -20,46 +21,126 @@
         flex-direction: column;
         height: 100vh;
       }
+      /* The look of the roomle-ui chrome (minifabric-example/src/style.css):
+         Lato, white bar, hairline borders, pill buttons, red primary. */
       #top-bar {
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 8px 10px;
-        background-color: #e8e8e8;
-        font-family: sans-serif;
-        font-size: 12px;
-        border-bottom: 1px solid #ccc;
+        padding: 8px 16px;
+        background-color: #ffffff;
+        font-family: 'Lato', sans-serif;
+        font-size: 0.875rem;
+        color: #121212;
+        border-bottom: 1px solid #e0e0e0;
         flex-wrap: wrap;
-      }
-      #top-bar label {
-        flex-shrink: 0;
-      }
-      #top-bar select,
-      #top-bar input[type='text'] {
-        padding: 2px 4px;
-      }
-      #top-bar button {
-        padding: 4px 8px;
       }
       .top-bar-group {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
+      }
+      #top-bar label,
+      .top-bar-label {
+        flex-shrink: 0;
+        font-size: 0.75rem;
+        font-weight: 300;
+        text-transform: uppercase;
+        color: #2d2d2d;
+      }
+      #top-bar select {
+        font: inherit;
+        color: #121212;
+        padding: 0.35rem 1.6rem 0.35rem 0.6rem;
+        border: 1px solid #d3d3d3;
+        border-radius: 0;
+        background-color: #ffffff;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16.003 18.626l7.081-7.081L25 13.46l-8.997 8.998-9.003-9 1.917-1.916z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.5em top 50%;
+        background-size: 0.9rem auto;
+        cursor: pointer;
+        outline: none;
+      }
+      #top-bar input[type='text'] {
+        box-sizing: border-box;
+        width: 10rem;
+        font: inherit;
+        color: #121212;
+        padding: 0.35rem 0.7rem;
+        border: 1px solid #d3d3d3;
+        border-radius: 999rem;
+        background-color: #ffffff;
+        outline: none;
+      }
+      #top-bar select:focus,
+      #top-bar input[type='text']:focus {
+        border-color: #282828;
+      }
+      .bar-button {
+        height: 2.25rem;
+        padding: 0 1.25rem;
+        border: 1px solid #d3d3d3;
+        border-radius: 3rem;
+        background: #ffffff;
+        font: inherit;
+        color: #282828;
+        cursor: pointer;
+      }
+      .bar-button--primary {
+        border-color: #dd1818;
+        background: #dd1818;
+        color: #ffffff;
+        font-weight: 700;
+        box-shadow: 1px 4px 12px 0 rgba(0, 0, 0, 0.22);
       }
       .top-bar-separator {
         width: 1px;
         height: 20px;
-        background-color: #aaa;
+        background-color: #e0e0e0;
         margin: 0 4px;
       }
+      /* The panel toggle at the very left: a round button whose chevron
+         points right while the panel is hidden, left while it is shown. */
+      #toggle-panel {
+        position: relative;
+        flex-shrink: 0;
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        border: 1px solid #d3d3d3;
+        border-radius: 100%;
+        background: #ffffff;
+        cursor: pointer;
+      }
+      #toggle-panel::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 30%;
+        height: 30%;
+        box-sizing: border-box;
+        border-top: 2px solid #282828;
+        border-right: 2px solid #282828;
+        transform: translate3d(-65%, -50%, 0) rotate(45deg);
+        transition: transform 250ms ease-in-out;
+      }
+      #toggle-panel.is-open::after {
+        transform: translate3d(-35%, -50%, 0) rotate(-135deg);
+      }
       #price-display {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
         margin-left: auto;
-        font-weight: 600;
       }
       #price-value {
         display: inline-block;
         min-width: 70px;
         text-align: right;
+        font-weight: 700;
       }
       .container {
         display: flex;
@@ -142,32 +223,31 @@
 
     <div id="app">
       <div id="top-bar">
+        <button
+          id="toggle-panel"
+          aria-label="Show panel"
+          aria-pressed="false"
+          title="Show panel"
+        ></button>
         <div class="top-bar-group">
-          <label for="preset-select">Preset:</label>
+          <label for="preset-select">Preset</label>
           <select id="preset-select"></select>
         </div>
         <div class="top-bar-group">
-          <label for="library-id-input">Library ID:</label>
-          <input
-            type="text"
-            id="library-id-input"
-            placeholder="Enter library ID"
-          />
+          <label for="library-id-input">Library ID</label>
+          <input type="text" id="library-id-input" placeholder="Library ID" />
         </div>
-        <button id="reload-config">Reload with config</button>
+        <button id="reload-config" class="bar-button bar-button--primary">
+          Reload
+        </button>
         <div class="top-bar-separator"></div>
-        <button id="send-to-om">Send to OM</button>
+        <button id="send-to-om" class="bar-button">Send to OM</button>
         <div class="top-bar-group">
           <input type="checkbox" id="send-to-om-with-price" checked />
           <label for="send-to-om-with-price">With price</label>
         </div>
-        <div class="top-bar-separator"></div>
-        <div class="top-bar-group">
-          <input type="checkbox" id="toggle-panel" />
-          <label for="toggle-panel">Show panel</label>
-        </div>
-        <div id="price-display" class="top-bar-group" aria-live="polite">
-          <span>Price:</span>
+        <div id="price-display" aria-live="polite">
+          <span class="top-bar-label">Price</span>
           <strong id="price-value">-</strong>
         </div>
       </div>
@@ -490,7 +570,14 @@
         },
         debugLogging: true,
       };
-      const chatEnabled = getQueryParam('chat') === 'true' || modelProxy;
+      // An explicit chat parameter decides: the launcher appends chat=true
+      // with a model and chat=false without one, so npm start and npm run dev
+      // start only the example, without the AI planning assistant - even when
+      // the model proxy of the HI server would enable it. Without the
+      // parameter (another static server), the model proxy decides.
+      const chatParam = getQueryParam('chat');
+      const chatEnabled =
+        chatParam === null ? modelProxy : chatParam === 'true';
       const options = {
         id: getQueryParam('id') ?? selectedPreset?.planId ?? DEFAULT_PLAN_ID,
         overrideServerUrl:
@@ -711,13 +798,19 @@
         Authorization: HI_AUTH_DATA,
       };
 
-      // The checkbox shows and hides the debug panel.
+      // The arrow button at the very left shows and hides the debug panel:
+      // chevron right while the panel is hidden, chevron left while it shows.
       const leftSection = document.querySelector('.left-section');
-      document
-        .getElementById('toggle-panel')
-        .addEventListener('change', (event) => {
-          leftSection.style.display = event.target.checked ? 'flex' : 'none';
-        });
+      const togglePanelButton = document.getElementById('toggle-panel');
+      togglePanelButton.addEventListener('click', () => {
+        const open = leftSection.style.display === 'flex';
+        leftSection.style.display = open ? 'none' : 'flex';
+        togglePanelButton.classList.toggle('is-open', !open);
+        togglePanelButton.setAttribute('aria-pressed', String(!open));
+        const label = open ? 'Show panel' : 'Hide panel';
+        togglePanelButton.setAttribute('aria-label', label);
+        togglePanelButton.title = label;
+      });
 
       await setupHi(hiOptions, {
         onLoadJavascript: () => libLoadCalcScript(hiOptions),
@@ -939,8 +1032,9 @@
         });
 
       // AI chat - active with the chat=true query parameter, which the
-      // launcher sets for `npm start <provider>:<model-id> <api-key>`, or with
-      // the model proxy of the HI server. The planner shows the AI Planning
+      // launcher sets for `npm start <provider>:<model-id> <api-key>` (and
+      // chat=false otherwise), or - without the parameter - with the model
+      // proxy of the HI server. The planner shows the AI Planning
       // Assistant window (featureFlags.planningAssistant), and the planning
       // assistant of the embedding-lib runs the agent in this page: the HI MCP
       // tools, the planner's prompts and the model the launcher serves at

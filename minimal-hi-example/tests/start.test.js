@@ -188,6 +188,8 @@ describe('example launcher', { skip: process.platform === 'win32' }, () => {
             .status,
           404
         );
+        // without a model the launcher starts only the example: chat=false
+        assert.ok(withoutModel.output().includes('&chat=false'));
         assert.ok(!withoutModel.output().includes('&chat=true'));
         assert.equal(
           await statusWithHost(
@@ -231,6 +233,63 @@ describe('example launcher', { skip: process.platform === 'win32' }, () => {
       );
     } finally {
       example.kill();
+    }
+  });
+
+  test('uses the next free port when the requested port is taken', async () => {
+    const blocker = createServer();
+    await new Promise((resolve) => blocker.listen(0, resolve));
+    const { port } = blocker.address();
+    const launcher = spawn(process.execPath, [launcherPath, '--no-open'], {
+      detached: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, EXAMPLE_PORT: String(port) },
+    });
+    let output = '';
+    launcher.stdout.on('data', (chunk) => {
+      output += chunk;
+    });
+    launcher.stderr.on('data', (chunk) => {
+      output += chunk;
+    });
+    const kill = () => {
+      try {
+        process.kill(-launcher.pid, 'SIGKILL');
+      } catch {}
+    };
+    try {
+      await waitUntil(
+        () => output.includes('Example:'),
+        () => `the launcher did not report its URL\n${output}`
+      );
+      assert.ok(
+        output.includes(`port ${port} is already in use`),
+        `no port fallback note\n${output}`
+      );
+      const usedPort = Number(
+        new URL(output.match(/Example:\s+(\S+)/)[1]).port
+      );
+      assert.notEqual(usedPort, port);
+      assert.ok(output.includes(`localhost:${usedPort}/`));
+      assert.ok(output.includes('&chat=false'));
+      const page = await fetch(`http://127.0.0.1:${usedPort}/`, {
+        signal: AbortSignal.timeout(1000),
+      });
+      assert.ok(page.ok);
+      assert.equal(
+        (
+          await fetch(
+            `http://127.0.0.1:${usedPort}/planning-assistant-config.json`,
+            {
+              signal: AbortSignal.timeout(1000),
+            }
+          )
+        ).status,
+        404
+      );
+    } finally {
+      kill();
+      await new Promise((resolve) => blocker.close(resolve));
     }
   });
 

@@ -1,11 +1,13 @@
 // Starts the HI example page:
-//   - serves this directory (the example page) on port 3000
+//   - serves this directory (the example page) on port 3000, or on the next
+//     free port when 3000 is already in use
+//   - opens the page without the AI chat: npm start and npm run dev start
+//     only the example (the page gets chat=false)
 //   - with a model and its API key, serves the model of the page's AI chat at
 //     /planning-assistant-config.json (to this machine only) and opens the
-//     page with the chat window visible; the chat runs in the page with the
-//     planning assistant of the embedding-lib (startPlanningAssistant).
-//     Without a model, the page runs the chat on the model proxy of the HI
-//     server when the backend of its user enables it
+//     page with chat=true and the chat window visible; the chat runs in the
+//     page with the planning assistant of the embedding-lib
+//     (startPlanningAssistant)
 //
 // Start it with:  npm start   (from the repository root or this directory)
 // No browser:     npm start -- --no-open
@@ -55,7 +57,7 @@ const parseOptions = () => {
 const { values: options, positionals } = parseOptions();
 
 const EXAMPLE_DIR = dirname(fileURLToPath(import.meta.url));
-const STATIC_PORT = Number(process.env.EXAMPLE_PORT ?? 3000);
+const REQUESTED_PORT = Number(process.env.EXAMPLE_PORT ?? 3000);
 const DEV_SERVER_URL = 'http://localhost:5173/';
 const EXAMPLE_SERVER_URL =
   process.env.EXAMPLE_SERVER_URL ?? (options.dev ? DEV_SERVER_URL : undefined);
@@ -127,11 +129,15 @@ const parseChatConfig = () => {
 };
 const chatConfig = parseChatConfig();
 
-const EXAMPLE_URL = `http://localhost:${STATIC_PORT}/?backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith${chatConfig ? '&chat=true' : ''}${
-  EXAMPLE_SERVER_URL
-    ? `&server_url=${encodeURIComponent(EXAMPLE_SERVER_URL)}`
-    : ''
-}`;
+// The page the launcher opens: the example always with an explicit chat
+// parameter - true with a model, false without one, so plain npm start and
+// npm run dev start only the example, without the AI planning assistant.
+const exampleUrl = (port) =>
+  `http://localhost:${port}/?backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith&chat=${chatConfig ? 'true' : 'false'}${
+    EXAMPLE_SERVER_URL
+      ? `&server_url=${encodeURIComponent(EXAMPLE_SERVER_URL)}`
+      : ''
+  }`;
 const STATIC_CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -141,9 +147,8 @@ const STATIC_CONTENT_TYPES = {
 const LOOPBACK_ADDRESSES = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
 // The authorities the page has on this machine. Another Host is a site whose
 // name resolves to this machine (DNS rebinding), which must not read the key.
-const LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '[::1]'].map(
-  (host) => `${host}:${STATIC_PORT}`
-);
+const loopbackHosts = (port) =>
+  ['localhost', '127.0.0.1', '[::1]'].map((host) => `${host}:${port}`);
 
 const serveStatic = (response, pathname) => {
   const relativePath = pathname === '/' ? 'index.html' : pathname.slice(1);
@@ -166,7 +171,7 @@ const serveStatic = (response, pathname) => {
 };
 
 // The model with its API key, for the page on this machine only.
-const servePlanningAssistantConfig = (request, response) => {
+const servePlanningAssistantConfig = (request, response, port) => {
   if (!chatConfig) {
     response.writeHead(404, { 'Content-Type': 'text/plain' });
     response.end(
@@ -176,7 +181,7 @@ const servePlanningAssistantConfig = (request, response) => {
   }
   if (
     !LOOPBACK_ADDRESSES.includes(request.socket.remoteAddress) ||
-    !LOOPBACK_HOSTS.includes(request.headers.host?.toLowerCase())
+    !loopbackHosts(port).includes(request.headers.host?.toLowerCase())
   ) {
     response.writeHead(403, { 'Content-Type': 'text/plain' });
     response.end('The model is served to this machine only');
@@ -189,22 +194,42 @@ const servePlanningAssistantConfig = (request, response) => {
   response.end(JSON.stringify(chatConfig));
 };
 
-const startExampleServer = () =>
+// Binds the server to the port; a taken port falls through to the next one.
+const listen = (server, port) =>
   new Promise((resolve, reject) => {
-    const server = createServer((request, response) => {
-      const { pathname } = new URL(
-        request.url,
-        `http://localhost:${STATIC_PORT}`
-      );
-      if (pathname === PLANNING_ASSISTANT_CONFIG_PATH) {
-        servePlanningAssistantConfig(request, response);
+    const onError = (error) => {
+      server.off('listening', onListening);
+      if (error.code === 'EADDRINUSE') {
+        resolve(listen(server, port + 1));
       } else {
-        serveStatic(response, pathname);
+        reject(error);
       }
-    });
-    server.on('error', reject);
-    server.listen(STATIC_PORT, () => resolve(server));
+    };
+    const onListening = () => {
+      server.off('error', onError);
+      resolve(port);
+    };
+    server.once('error', onError);
+    server.once('listening', onListening);
+    server.listen(port);
   });
+
+// Serves the example and answers with the port it is bound to.
+const startExampleServer = () => {
+  let pagePort = REQUESTED_PORT;
+  const server = createServer((request, response) => {
+    const { pathname } = new URL(request.url, `http://localhost:${pagePort}`);
+    if (pathname === PLANNING_ASSISTANT_CONFIG_PATH) {
+      servePlanningAssistantConfig(request, response, pagePort);
+    } else {
+      serveStatic(response, pathname);
+    }
+  });
+  return listen(server, REQUESTED_PORT).then((port) => {
+    pagePort = port;
+    return port;
+  });
+};
 
 const openInBrowser = (url) => {
   const command =
@@ -220,29 +245,28 @@ const openInBrowser = (url) => {
 };
 
 const main = async () => {
+  let port;
   try {
-    await startExampleServer();
+    port = await startExampleServer();
   } catch (error) {
-    if (error.code === 'EADDRINUSE') {
-      console.error(`[hi-example] port ${STATIC_PORT} is already in use.`);
-      console.error(
-        '[hi-example] pick another port: EXAMPLE_PORT=3101 npm start'
-      );
-    } else {
-      console.error('[hi-example] the example server failed to start', error);
-    }
+    console.error('[hi-example] the example server failed to start', error);
     process.exit(1);
+  }
+  if (port !== REQUESTED_PORT) {
+    console.log(
+      `[hi-example] port ${REQUESTED_PORT} is already in use - using ${port}`
+    );
   }
   console.log('');
   console.log('  HI example ready');
   console.log('');
-  console.log(`  ➜  Example:  ${EXAMPLE_URL}`);
+  console.log(`  ➜  Example:  ${exampleUrl(port)}`);
   if (chatConfig) {
     console.log(`  ➜  Model:    ${chatConfig.provider} ${chatConfig.model}`);
   }
   console.log('');
   if (!options['no-open']) {
-    openInBrowser(EXAMPLE_URL);
+    openInBrowser(exampleUrl(port));
   }
   for (const signal of ['SIGINT', 'SIGTERM']) {
     process.on(signal, () => process.exit(0));

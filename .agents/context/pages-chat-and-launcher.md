@@ -26,7 +26,7 @@ reads its arguments with `parseArgs` of `node:util`; an unknown flag exits with 
 
 | Variable | Default | Effect |
 | -------- | ------- | ------ |
-| `EXAMPLE_PORT` | 3000 | page port |
+| `EXAMPLE_PORT` | 3000 | the requested page port; a taken port falls through to the next free one |
 | `EXAMPLE_SERVER_URL` | — | the planner's Rubens UI, passed as `server_url` |
 
 ### What it does
@@ -37,31 +37,41 @@ reads its arguments with `parseArgs` of `node:util`; an unknown flag exits with 
    names and knows no deployment: which options a model needs is the caller's knowledge — the
    `models` of the test JSONs carry them. `readsImages` is `true` for every model.
    `referenceCacheBreakpoint` requires an embedding-lib that supports the option.
-2. **Static server** for `minimal-hi-example/` (`/` → `index.html`; only `.html`, `.js`, `.md`, `.json`).
+2. **Static server** for `minimal-hi-example/` (`/` → `index.html`; only `.html`, `.js`, `.md`, `.json`) on
+   the requested port (3000, `EXAMPLE_PORT`), or the next free port when it is taken — `listen` retries
+   `port + 1` on `EADDRINUSE`, as `pages/serve.mjs` does, and the launcher prints
+   `port <requested> is already in use - using <bound>`.
 3. **Config:** `/planning-assistant-config.json` answers the config as JSON with
    `Cache-Control: no-store`, to a request from this machine only (`127.0.0.1`, `::1`) under a
    loopback Host (`localhost`, `127.0.0.1`, `[::1]` with the page port), so a site whose name
    resolves to this machine (DNS rebinding) cannot read the key; 403 otherwise, 404 without a model.
 4. **Prints** `Example:` and, with a model, `Model:` (provider and model, never the key) — the test
    scripts parse the `Example:` line — and opens
-   `http://localhost:3000/?backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`, plus
-   `chat=true` with a model and `server_url`.
+   `http://localhost:<port>/?backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith&chat=<chat>`,
+   plus `server_url`. `<port>` is 3000 or the next free port, `<chat>` always explicit: `true` with a
+   model, `false` without one, so plain `npm start` and `npm run dev` start only the example, without
+   the AI planning assistant — even when the backend of the page's user enables the model proxy.
 
 SIGINT and SIGTERM end the launcher with 0, and the page server stops with it.
 `minimal-hi-example/tests/start.test.js` checks the exact model id of a provider in start and dev
 mode, the rejected models (no provider, an unknown provider, an empty id, `openai-compatible`
 without a base URL, no key, an unknown flag), the config of a model with its options, the 404
-without one, the 403 for a foreign Host, and that the page port can be bound again after signalling
-only the launcher PID (POSIX).
+without one, the 403 for a foreign Host, that the opened URL carries `chat=true` with a model and
+`chat=false` without one, that a taken requested port falls through to the next free port (the
+launcher prints the fallback and serves there), and that the page port can be bound again after
+signalling only the launcher PID (POSIX).
 
 ## The chat of the example page
 
 `index.html` imports `@roomle/embedding-lib` and its `hi.js` from jsDelivr's npm CDN, pinned to the dev version
 `0.0.0-dev-4c2797a`
-([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)). With `?chat=true`,
-or with the model proxy of the HI server — `modelProxy`: `/backends/list` answers exactly one
-backend and its `enableAIPlanning` is `true`, since the proxy serves only a user of exactly one
-backend — the page sets `featureFlags.planningAssistant` in the planner options, and `startChat`:
+([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)). The page sets
+`featureFlags.planningAssistant` in the planner options when the `chat` query parameter says so —
+`chat=true` starts the chat, `chat=false` (what the launcher appends without a model) keeps the
+planning assistant off even when the model proxy would enable it; without the parameter (the page
+served by another static server) the model proxy decides — `modelProxy`: `/backends/list` answers
+exactly one backend and its `enableAIPlanning` is `true`, since the proxy serves only a user of
+exactly one backend — and `startChat`:
 
 1. leaves the chat off, with a line in the debug log, when the planner has no
    `planningAssistantOutput` (no AI Planning Assistant window);

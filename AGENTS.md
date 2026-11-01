@@ -84,8 +84,9 @@ roomle-hi-example is a demonstration and development environment for:
 4. **Demo Proxy** (`minifabric-example/proxy-server/`) — the Cloud Function `proxy_request` that forwards the requests of the Roomle demos to HOMAG and Azure AI Foundry; `npm run dev:proxy` runs it locally, `npm run deploy:proxy` deploys it ([`.agents/context/demo-proxy.md`](./.agents/context/demo-proxy.md))
 
 The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) provides:
-- Static file serving for the example HTML page on port 3000
-- With `npm start <provider>:<model-id> <api-key>` (the provider of the embedding-lib — `azure`, `openai`, `mistral`, `anthropic`, `google`, `openai-compatible` — and the exact model id, no aliases, e.g. `npm start azure:gpt-6-astra $AZURE_GPT_KEY`; options such as `--reasoning-effort` after `--`): the model of the chat for the page (`/planning-assistant-config.json`, to this machine only) and the page opened with the chat window visible; without a model, the chat runs on the model proxy of the HI server when the backend enables it
+- Static file serving for the example HTML page on port 3000, or the next free port when 3000 is taken (`EXAMPLE_PORT` pins the requested port)
+- The page opened with an explicit `chat` parameter: `chat=false` for plain `npm start` / `npm run dev` (only the example, no AI planning assistant), `chat=true` with a model
+- With `npm start <provider>:<model-id> <api-key>` (the provider of the embedding-lib — `azure`, `openai`, `mistral`, `anthropic`, `google`, `openai-compatible` — and the exact model id, no aliases, e.g. `npm start azure:gpt-6-astra $AZURE_GPT_KEY`; options such as `--reasoning-effort` after `--`): the model of the chat for the page (`/planning-assistant-config.json`, to this machine only) and the page opened with the chat window visible
 - Browser auto-open at the example URL
 
 ## Repository Structure
@@ -493,7 +494,8 @@ deletes the document, and the bug's item leaves the backlog.
 npm start          # or: node minimal-hi-example/start.mjs
 ```
 
-This serves the example page `minimal-hi-example/index.html` on port 3000 and opens it;
+This serves the example page `minimal-hi-example/index.html` on port 3000 (the next free port
+when it is taken) and opens it without the AI planning assistant;
 `npm start <provider>:<model-id> <api-key>` adds the chat ([docs/ai-chat.md](./docs/ai-chat.md)), whose planning
 assistant runs the HI tools. `npm run start:sc` opens the start page (`pages/`) on port 3300 with the
 sign-in example (`hi-sc-example/`) under `/hi-sc/`, the minifabric example (`minifabric-example/`)

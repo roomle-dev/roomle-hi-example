@@ -19,11 +19,13 @@ the same at <https://roomle-dev.github.io/roomle-hi-example/>. [Back to the over
 The title "HOMAG Intelligence Examples" at the top left, and three square tiles in a row, each an
 image with its label: **Sales Configurator** (`hi-sc/`, the sign-in example), **nobilia
 Minifabrik** (`nobilia-minifabrik/`) and **LIGNA Store** (<https://www.roomle.com/t/ligna-store/>).
-The tiles wrap on a narrow screen. The two example links and the images are relative to the page,
-so they work on the dev server at `/` and on GitHub Pages under `/roomle-hi-example/`.
+The tiles wrap on a narrow screen. The page links `assets/favicon.png` as its icon. The two
+example links and the images are relative to the page, so they work on the dev server at `/` and
+on GitHub Pages under `/roomle-hi-example/`.
 
 | Image (`pages/assets/`) | Shows | Source |
 | ----------------------- | ----- | ------ |
+| `favicon.png` | the favicon of the start page and of every example page | the HI icon (the white isometric R on red), 512 × 512 PNG |
 | `homag-intelligence.jpg` | the tile of both HI examples: the HI shelves | a section of `hi-sc-example/src/assets/say-hi-to-homag-intelligence.jpg` |
 | `ligna-store.jpg` | the tile of the ligna-store: planning in the store | ligna-store `images/home/kitchen_1.png`, as JPEG at 600 px |
 | `ligna-store-kitchen.jpg` | the background, darkened by a gradient: a kitchen | ligna-store `images/home/headerbild.png`, as JPEG |

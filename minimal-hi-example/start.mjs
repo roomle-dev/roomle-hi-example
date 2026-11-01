@@ -143,6 +143,7 @@ const STATIC_CONTENT_TYPES = {
   '.js': 'text/javascript; charset=utf-8',
   '.md': 'text/markdown; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
 };
 const LOOPBACK_ADDRESSES = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
 // The authorities the page has on this machine. Another Host is a site whose

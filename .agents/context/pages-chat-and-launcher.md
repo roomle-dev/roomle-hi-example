@@ -37,7 +37,7 @@ reads its arguments with `parseArgs` of `node:util`; an unknown flag exits with 
    names and knows no deployment: which options a model needs is the caller's knowledge — the
    `models` of the test JSONs carry them. `readsImages` is `true` for every model.
    `referenceCacheBreakpoint` requires an embedding-lib that supports the option.
-2. **Static server** for `minimal-hi-example/` (`/` → `index.html`; only `.html`, `.js`, `.md`, `.json`) on
+2. **Static server** for `minimal-hi-example/` (`/` → `index.html`; only `.html`, `.js`, `.md`, `.json`, `.png` — the `.png` serves the favicon `favicon.png` the page links) on
    the requested port (3000, `EXAMPLE_PORT`), or the next free port when it is taken — `listen` retries
    `port + 1` on `EADDRINUSE`, as `pages/serve.mjs` does, and the launcher prints
    `port <requested> is already in use - using <bound>`.

@@ -63,15 +63,24 @@ describe('route', () => {
 });
 
 describe('the start page', () => {
-  it('links the two examples relative to it and the ligna-store', async () => {
+  it('links the favicon, the two examples relative to it and the ligna-store', async () => {
     const links = [
       ...(await readFile(START_PAGE, 'utf8')).matchAll(/href="([^"]+)"/g),
     ].map(([, href]) => href);
     assert.deepEqual(links, [
+      'assets/favicon.png',
       'hi-sc/',
       'nobilia-minifabrik/',
       'https://www.roomle.com/t/ligna-store/',
     ]);
+  });
+
+  it('answers the favicon of the start page from its assets', async () => {
+    assert.deepEqual(route('/assets/favicon.png'), {
+      kind: 'start-page-asset',
+      file: `${START_PAGE_ASSETS}favicon.png`,
+    });
+    await access(`${START_PAGE_ASSETS}favicon.png`);
   });
 
   it('finds every image of the start page in its assets', async () => {

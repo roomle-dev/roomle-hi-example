@@ -34,7 +34,8 @@ AI kitchen generation and the AI Planning Assistant. It is the standalone form o
 
 | File | Responsibility |
 | ---- | -------------- |
-| `minifabric-example/index.html` | the settings panel with its form and actions, the planner container |
+| `minifabric-example/index.html` | the settings panel with its form and actions, the planner container; links `/favicon.png` as the icon |
+| `minifabric-example/public/favicon.png` | the favicon of the page — Vite serves `public/` at the root, also under the base path of the start page |
 | `minifabric-example/src/main.ts` | the settings panel, the HI setup, the planner, the prices, the actions, the chat |
 | `minifabric-example/src/settings.ts` | `loadSettings`, `saveSettings`, `applyQueryParams`: the settings of the panel |
 | `minifabric-example/src/planner.ts` | `plannerOptions`, `orderManagerHeaders`, `PLANNING_ASSISTANT_CONFIG` |

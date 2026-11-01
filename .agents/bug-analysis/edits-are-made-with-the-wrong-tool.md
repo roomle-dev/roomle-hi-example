@@ -6,7 +6,7 @@
 > deletes it  
 > **Date**: 2026-11-01  
 > **Backlog**: [Where Mistral Large falls short of the prompts](../backlog/mistral-large-prompt-issues.md), issue 4
-> ("Edits are made with the wrong tool")  
+> ("Edits are made with the wrong tool") — removed when the fix was implemented, per [the backlog rule](../backlog/README.md)  
 > **Base**: roomle-hi-example `analyse/mistral-large-prompt-issues-bug-4` (from `master` `7c18480d`); roomle-ui
 > `feat/hi-planning-assistant-lightweight` (`31def74f2`)  
 > **Fix**: roomle-ui `feat/hi-planning-assistant-lightweight` `72be4d1a2` — the edit tools' descriptions open with

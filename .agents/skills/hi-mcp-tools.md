@@ -137,8 +137,9 @@ come from the library's descriptions for single or paired doors; other direction
 module carries, with id, name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`,
 `mod_Height`; the panels `mod_UprightDepth`, `mod_UprightHeight`, the island backwall
 `mod_IslandBackwallWidth`; the range hood `DU` and the TV `SM_TV` have none). A corner article
-(`cornerArticle: true`) also lists `cornerBackLengthsMm`, the lengths of its `LeftBack`/`RightBack`
-docking vectors. A root
+(`cornerArticle: true`) also lists `cornerBackLengthsMm`: an object with the lengths of its
+`LeftBackBottom`/`RightBackBottom` docking vectors in millimetres as the named fields `left` and
+`right`, each present when the article has that vector. A root
 in `groups` carries the same ids among its `attributes`; a group's `position.footprint` gives
 `widthMm`/`depthMm` of the whole group, its `x` and `y` ranges measured from `pos`, the front towards
 `−y`. A group's `position.pos` and `rotationZ` are what a

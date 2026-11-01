@@ -56,7 +56,7 @@ Access via `get-plan-context` (a default section, or `include: ['articles']`):
       libraryId: string,
       catalog: string,
       cornerArticle: boolean,     // true for an article made for a room corner
-      cornerBackLengthsMm: number[], // a corner article only: the lengths of its LeftBack/RightBack vectors
+      cornerBackLengthsMm: { left?: number, right?: number }, // a corner article only: the LeftBackBottom / RightBackBottom lengths in millimetres, each field present when the article has that vector
       rootModules: [{
         module: { id, name, desc },
         dimensions: [{ id, name, value }],      // the size attributes the root's module carries, in millimetres

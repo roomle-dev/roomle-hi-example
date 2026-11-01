@@ -10,6 +10,17 @@
 > (`mistral-large-4`: the tests 01–52 of `docs/test-prompts.json`, stopped as too slow), both
 > against the local roomle-ui (`--dev`)
 
+**Models for these issues and for testing them.** Only the Mistral models show these issues:
+reproduce and test them with `mistral-large-latest` (the alias; the Mistral API answers it with
+`mistral-large-2512`) and with `mistral-large-4` (`mistral-large-4-0`, the launcher's
+`mistral:mistral-large-4`). No other model reproduces them.
+
+**Validation.** Every issue is checked against the planner build the example loads
+(`@roomle/embedding-lib@0.0.0-dev-4c2797a`, roomle-ui `release/bo-test`): none of the directions is
+in the served text, the input schemas, the results or the hints as they stand, so no issue is
+removed — all 13 stay open. Reproducibility is rated per issue below and in the overview by the
+runs that show it of the affected model: high — 9 or more runs, medium — 3 to 8, low — 1 or 2.
+
 The chat model `mistral-large-latest` fulfils far fewer prompts than the GPT models: 23 pass,
 17 partial, 16 fail of 56 runs, while gpt-6-astra passed 55 of 56 runs that morning — the same
 51 fixed tests and five random tests of its own — against the same planner
@@ -43,21 +54,21 @@ result (11), the hinge of a new row end (12) and the speed (13) come with it.
 
 ## Overview
 
-| # | Issue | Runs mistral-large-latest (of 56) | Runs mistral-large-4 (of 52) | Responsible | Direction |
-|---|---|---|---|---|---|
-| 1 | [The payload format is guessed: relations and ids the server does not read](#1-the-payload-format-is-guessed-relations-and-ids-the-server-does-not-read) | 18 | 0 | MCP server — input schema; roomle-ui — payload normalisation | Declare the group and root fields in the input schema; map the relation forms the model writes |
-| 2 | [One piece of furniture is sent as several groups](#2-one-piece-of-furniture-is-sent-as-several-groups) | 8 | 0 | roomle-ui — HI tool command | Merge the groups of one call whose relations name each other's roots |
-| 3 | [Wall units in a group of their own stand on the floor](#3-wall-units-in-a-group-of-their-own-stand-on-the-floor) | 4 | 0 | roomle-ui — wall placement | Hang a group of wall units only at the wall-unit height, or say that it stands on the floor |
-| 4 | [Edits are made with the wrong tool](#4-edits-are-made-with-the-wrong-tool) | 9 | 4 | MCP server — tool descriptions; roomle-ui — results | Open the edit tools' descriptions with the user's words; a hint when a replace is an edit |
-| 5 | [Obstacle hints are handed to the user instead of acted on](#5-obstacle-hints-are-handed-to-the-user-instead-of-acted-on) | 4 | 0 | roomle-ui — hints | Name the placement that clears the obstacle on the group's own wall |
-| 6 | [A described wall or room is missed](#6-a-described-wall-or-room-is-missed) | 3 | 0 | MCP server — plan context | Describe each wall in the plan context: free stretches, openings, a sloping ceiling |
-| 7 | [Rows and unit counts do not fit the request or the wall](#7-rows-and-unit-counts-do-not-fit-the-request-or-the-wall) | 5 | 0 | roomle-ui — results | Say in the result when a group reaches past its wall or out of the room |
-| 8 | [Attribute ids and values are guessed](#8-attribute-ids-and-values-are-guessed) | 6 | 2 | roomle-ui — attribute commands; served text | Resolve a value name to the value and say so; check what invites unrequested materials |
-| 9 | [Ids are guessed before the plan is read](#9-ids-are-guessed-before-the-plan-is-read) | 6 | 0 | roomle-ui — group lookup | Use the only group of the plan for an unknown group id and say so |
-| 10 | [Answers do not match the plan](#10-answers-do-not-match-the-plan) | 9 | 1 | MCP server — results | Name in the result where each group stands, in the plan context's words |
-| 11 | [Every look at the plan ends the turn](#11-every-look-at-the-plan-ends-the-turn) | — | 11 | embedding-lib — planning assistant | Move the images of a tool result into a user message for Mistral models |
-| 12 | [The door at a new row end keeps its hinge](#12-the-door-at-a-new-row-end-keeps-its-hinge) | — | 1 | MCP server — served text | Name a delete that leaves the gap among the edits that give a row new ends |
-| 13 | [Turns take minutes](#13-turns-take-minutes) | — | 3 | embedding-lib — planning assistant; MCP server — served text and results | Measure where the time of a turn goes before changing anything |
+| # | Issue | Runs mistral-large-latest (of 56) | Runs mistral-large-4 (of 52) | Reproducibility | Responsible | Direction |
+|---|---|---|---|---|---|---|
+| 1 | [The payload format is guessed: relations and ids the server does not read](#1-the-payload-format-is-guessed-relations-and-ids-the-server-does-not-read) | 18 | 0 | high | MCP server — input schema; roomle-ui — payload normalisation | Declare the group and root fields in the input schema; map the relation forms the model writes |
+| 2 | [One piece of furniture is sent as several groups](#2-one-piece-of-furniture-is-sent-as-several-groups) | 8 | 0 | medium | roomle-ui — HI tool command | Merge the groups of one call whose relations name each other's roots |
+| 3 | [Wall units in a group of their own stand on the floor](#3-wall-units-in-a-group-of-their-own-stand-on-the-floor) | 4 | 0 | medium | roomle-ui — wall placement | Hang a group of wall units only at the wall-unit height, or say that it stands on the floor |
+| 4 | [Edits are made with the wrong tool](#4-edits-are-made-with-the-wrong-tool) | 9 | 4 | high | MCP server — tool descriptions; roomle-ui — results | Open the edit tools' descriptions with the user's words; a hint when a replace is an edit |
+| 5 | [Obstacle hints are handed to the user instead of acted on](#5-obstacle-hints-are-handed-to-the-user-instead-of-acted-on) | 4 | 0 | medium | roomle-ui — hints | Name the placement that clears the obstacle on the group's own wall |
+| 6 | [A described wall or room is missed](#6-a-described-wall-or-room-is-missed) | 3 | 0 | medium | MCP server — plan context | Describe each wall in the plan context: free stretches, openings, a sloping ceiling |
+| 7 | [Rows and unit counts do not fit the request or the wall](#7-rows-and-unit-counts-do-not-fit-the-request-or-the-wall) | 5 | 0 | medium | roomle-ui — results | Say in the result when a group reaches past its wall or out of the room |
+| 8 | [Attribute ids and values are guessed](#8-attribute-ids-and-values-are-guessed) | 6 | 2 | medium | roomle-ui — attribute commands; served text | Resolve a value name to the value and say so; check what invites unrequested materials |
+| 9 | [Ids are guessed before the plan is read](#9-ids-are-guessed-before-the-plan-is-read) | 6 | 0 | medium | roomle-ui — group lookup | Use the only group of the plan for an unknown group id and say so |
+| 10 | [Answers do not match the plan](#10-answers-do-not-match-the-plan) | 9 | 1 | high | MCP server — results | Name in the result where each group stands, in the plan context's words |
+| 11 | [Every look at the plan ends the turn](#11-every-look-at-the-plan-ends-the-turn) | — | 11 | high | embedding-lib — planning assistant | Move the images of a tool result into a user message for Mistral models |
+| 12 | [The door at a new row end keeps its hinge](#12-the-door-at-a-new-row-end-keeps-its-hinge) | — | 1 | low | MCP server — served text | Name a delete that leaves the gap among the edits that give a row new ends |
+| 13 | [Turns take minutes](#13-turns-take-minutes) | — | 3 | medium | embedding-lib — planning assistant; MCP server — served text and results | Measure where the time of a turn goes before changing anything |
 
 "—": not counted in that session.
 
@@ -90,6 +101,7 @@ an id that matches the model's reference.
 ids, with or without `get-authoring-rules`.
 
 **Reproduce.** `mcp-test-2026-10-17_10-50-12`, mistral-large-latest 45 (`image-only-tall-units`).
+**Reproducibility:** high — 18 of 56 runs of `mistral-large-latest`.
 
 ## 2. One piece of furniture is sent as several groups
 
@@ -107,6 +119,7 @@ tool description, issue 1).
 kitchen with its wall units and hood included (large-4 47, 50).
 
 **Reproduce.** `mcp-test-2026-10-17_10-50-12`, mistral-large-latest 08 (`attic-room-tall-units-right-wall`).
+**Reproducibility:** medium — 8 of 56 runs of `mistral-large-latest`.
 
 ## 3. Wall units in a group of their own stand on the floor
 
@@ -125,6 +138,7 @@ join its group and hang above its floor units.
 at 1480 mm (large-4 51).
 
 **Reproduce.** `mcp-test-2026-10-17_10-50-12`, mistral-large-latest 02 (`four-cabinets-back-wall`).
+**Reproducibility:** medium — 4 of 56 runs of `mistral-large-latest`.
 
 ## 4. Edits are made with the wrong tool
 
@@ -150,6 +164,7 @@ exchanges it for a 900 mm base cabinet instead of correcting the door direction 
 (large-4 36) — the correction ends "change the failing values or replace the article".
 
 **Reproduce.** `mcp-test-2026-10-21_16-59-20`, mistral-large-4 44 (`undo-last-change`).
+**Reproducibility:** high — 9 of 56 runs of `mistral-large-latest` and 4 of 52 of `mistral-large-4`.
 
 ## 5. Obstacle hints are handed to the user instead of acted on
 
@@ -168,6 +183,7 @@ deleted and built again in the free stretch (large-4 07); a placement clears a w
 adjoining wall by an offset (large-4 09).
 
 **Reproduce.** `mcp-test-2026-10-17_10-50-12`, mistral-large-latest 40 (`obstacle-back-wall-beside-the-sofa`).
+**Reproducibility:** medium — 4 of 56 runs of `mistral-large-latest`.
 
 ## 6. A described wall or room is missed
 
@@ -183,6 +199,10 @@ levels. Room data only, library-neutral.
 storage along the wall under it (large-4 14).
 
 **Reproduce.** `mcp-test-2026-10-17_10-50-12`, mistral-large-latest 13 (`attic-room-storage-under-slope`).
+Also reproduce with the test prompt `kitchen-back-right-corner` — "plan a kitchen in the back
+right corner of the room" ([docs/test-prompts.json](../../docs/test-prompts.json#L462-L465)) —
+the simplest prompt that names a corner of the room.
+**Reproducibility:** medium — 3 of 56 runs of `mistral-large-latest`.
 
 ## 7. Rows and unit counts do not fit the request or the wall
 
@@ -197,6 +217,7 @@ a note, never a refusal (the user may want it). The width the library cannot cal
 **mistral-large-4.** Not seen in its 52 runs; its image tests did not run.
 
 **Reproduce.** `mcp-test-2026-10-17_10-50-12`, mistral-large-latest 49 (`image-only-no-text`).
+**Reproducibility:** medium — 5 of 56 runs of `mistral-large-latest`.
 
 ## 8. Attribute ids and values are guessed
 
@@ -215,6 +236,7 @@ three attribute changes to undo the library's program switch (large-4 52); a 400
 a hanging rail the library cannot calculate (large-4 40).
 
 **Reproduce.** `mcp-test-2026-10-21_16-59-20`, mistral-large-4 52 (`obstacle-back-wall-beside-the-sofa`).
+**Reproducibility:** medium — 6 of 56 runs of `mistral-large-latest` and 2 of 52 of `mistral-large-4`.
 
 ## 9. Ids are guessed before the plan is read
 
@@ -228,6 +250,7 @@ say so — the error already names the one fix.
 **mistral-large-4.** Every edit reads the plan first and uses the ids it lists.
 
 **Reproduce.** `mcp-test-2026-10-17_10-50-12`, mistral-large-latest 21 (`edit-delete-group`).
+**Reproducibility:** medium — 6 of 56 runs of `mistral-large-latest`.
 
 ## 10. Answers do not match the plan
 
@@ -244,6 +267,7 @@ inserted drawer unit is called the one "above the fridge" — it hangs above the
 the fridge (large-4 31).
 
 **Reproduce.** `mcp-test-2026-10-21_16-59-20`, mistral-large-4 31 (`edit-insert-below-wall-units`).
+**Reproducibility:** high — 9 of 56 runs of `mistral-large-latest` and 1 of 52 of `mistral-large-4`.
 
 ## 11. Every look at the plan ends the turn
 
@@ -261,6 +285,7 @@ models in the planning assistant of the embedding-lib (roomle-ui `hi-planning-as
 `wrapLanguageModel` middleware). The tests of a Mistral model measure little else until then.
 
 **Reproduce.** `mcp-test-2026-10-21_16-59-20`, mistral-large-4 04 (`media-unit-left-wall`).
+**Reproducibility:** high — 11 of 52 runs of `mistral-large-4` end on it.
 
 ## 12. The door at a new row end keeps its hinge
 
@@ -278,6 +303,7 @@ a row new ends — in the authoring rule and in the new-end reminder of `get-pla
 only: D84 rejects the server setting the hinge side.
 
 **Reproduce.** `mcp-test-2026-10-21_16-59-20`, mistral-large-4 39 (`wardrobe-split-door-hinges`).
+**Reproducibility:** low — 1 of 52 runs of `mistral-large-4`.
 
 ## 13. Turns take minutes
 
@@ -294,3 +320,4 @@ the planning assistant (the open Chat item "A step log for the benchmark" of the
 never the planning.
 
 **Reproduce.** `mcp-test-2026-10-21_16-59-20`, mistral-large-4 49 (`kitchen-oven-hood-sink-fridge-corner`).
+**Reproducibility:** medium — every run takes about 3 minutes, 3 of 52 end on the chat timeout.

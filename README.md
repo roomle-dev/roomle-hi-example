@@ -26,7 +26,7 @@ npm start mistral:mistral-large-4 "$MI_API_USAGE_KEY"
 
 | Invocation | What you get |
 | ---------- | ------------ |
-| `npm start` | Example page on :3000, browser opens; the chat runs on the model proxy of the HI server when the backend of the page's user enables it, otherwise no chat |
+| `npm start` | Example page on :3000 (the next free port when it is taken), browser opens, without the AI planning assistant (`chat=false`) |
 | `npm start -- --no-open` | Same, without opening the browser |
 | `npm start <provider>:<model-id> <api-key>` | Plus chat with that model: `<provider>` is `azure`, `openai`, `mistral`, `anthropic`, `google` or `openai-compatible`, `<model-id>` the exact model id at it — no aliases |
 | `npm start azure:<deployment> <api-key>` | Plus chat with that deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`), e.g. `azure:gpt-6-astra`, `azure:gpt-5.4-mini` |

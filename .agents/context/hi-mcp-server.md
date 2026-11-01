@@ -43,7 +43,7 @@ parameters:
 
 | Parameter | Effect |
 | --------- | ------ |
-| `chat` | `true` shows the AI Planning Assistant window and starts the chat with the model the launcher serves (the launcher appends it when it is started with a model) |
+| `chat` | `true` shows the AI Planning Assistant window and starts the chat with the model the launcher serves; `false` keeps the planning assistant off, even when the model proxy would enable it. The launcher always appends it: `true` when started with a model, `false` otherwise. Without the parameter (another static server), the model proxy of the HI server decides |
 | `backendId` | Selects the HI backend: its library, its plan, its additional catalogs and its server URL (`overrideServerUrl`) of `/backends/list` are the defaults; a backend the list does not have takes nothing of another one. Without it, the default preset |
 | `library_id` | Overrides the backend's library |
 | `id` | Selects the plan loaded at startup, over the backend's plan; without both, the default plan |
@@ -64,7 +64,7 @@ demo; it must not be reused as a production credential.
 ## Architecture
 
 ```text
-the example page (index.html, served by the launcher on :3000)
+the example page (index.html, served by the launcher on :3000 or the next free port)
   AI Planning Assistant window
     |  onPlanningAssistantPrompt
     v
@@ -75,8 +75,9 @@ the example page (index.html, served by the launcher on :3000)
   on its seven planner methods; roomle-ui performs the plan-changing tools (HI tool commands)
 ```
 
-The example is one process: `start.mjs` serves `index.html` on port 3000 and, when it is started
-with a model, the `PlanningAssistantConfig` of that model at `/planning-assistant-config.json`. The
+The example is one process: `start.mjs` serves `index.html` on port 3000 — the next free port when
+3000 is taken — and, when it is started with a model, the `PlanningAssistantConfig` of that model
+at `/planning-assistant-config.json`. The
 tools run in the planner: the page forwards every tool call to
 `roomDesignerApi.extended.callExternalObjectAgentTool`, and the tool calls one or more planner
 methods there. A tool that changes the plan is one call,
@@ -87,7 +88,7 @@ materials, the hints — and answers with the tool's result.
 
 | File | Responsibility |
 | ---- | -------------- |
-| `minimal-hi-example/start.mjs` | The launcher: static file server for `minimal-hi-example/` on :3000, the model of the chat at `/planning-assistant-config.json` (to this machine only), opens the browser |
+| `minimal-hi-example/start.mjs` | The launcher: static file server for `minimal-hi-example/` on :3000 (the next free port when taken), the model of the chat at `/planning-assistant-config.json` (to this machine only), opens the browser |
 | `minimal-hi-example/index.html` | The example itself, plus the chat at the end: `startPlanningAssistant` with the model of the launcher, on a planner API that records the tool calls the planner runs, for the test scripts |
 | `minimal-hi-example/package.json` | The `start` script that runs the launcher and `dev` which adds `server_url=http://localhost:5173/` |
 | roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/*` | The HI tools: tool definitions with zod schemas and the served text (`hi-mcp-server.ts`), the tool executors (`tool-executors.ts`: the plan context in the agent's words, `find-attributes`, the forward of the plan-changing tools, undo and redo), the planner methods they call (`planner-api.ts`), the planning skills — shared with the ligna-store |
@@ -111,13 +112,14 @@ in `start.mjs` behind `--dev`, not as an inline variable of the npm script, so
 the script runs under Windows `cmd` as well.
 
 The launcher serves the example and opens it in the default browser at
-`http://localhost:3000/?backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`
-(`npm start -- --no-open` skips that). If port 3000 is taken (the ligna-store dev server uses it
-too), start with another page port: `EXAMPLE_PORT=3101 npm start`. Ctrl+C or SIGTERM to the
-launcher stops the page server.
+`http://localhost:3000/?backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith&chat=false`
+— plain `npm start` and `npm run dev` start only the example, without the AI planning assistant
+(`npm start -- --no-open` skips the browser). If port 3000 is taken (the ligna-store dev server
+uses it too), the launcher uses the next free port and prints it; `EXAMPLE_PORT=3101 npm start`
+pins the requested port. Ctrl+C or SIGTERM to the launcher stops the page server.
 
-Without the chat the example can still be served by any static file
-server (e.g. `npx http-server -c-1 -p 39485`); the chat then runs on the model proxy of the HI
+Served by any other static file server (e.g. `npx http-server -c-1 -p 39485`) without a `chat`
+parameter, the chat runs on the model proxy of the HI
 server when the backend of the page's user enables it.
 
 The chat: `npm start <provider>:<model-id> <api-key>` (for example

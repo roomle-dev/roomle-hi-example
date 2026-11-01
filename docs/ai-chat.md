@@ -45,7 +45,7 @@ npm start anthropic:claude-sonnet-4-5 "$ANTHROPIC_API_KEY"
 npm start google:gemini-2.5-pro "$GEMINI_API_KEY"                # Gemini API key from Google AI Studio
 npm start openai:<model-id> "$OPENAI_ASSISTANT_API_KEY"          # the OpenAI Responses API
 npm run dev azure:gpt-6-astra "$AZURE_GPT_KEY"                   # same, planner from the local Rubens UI dev server (:5173)
-npm start                                                         # no model: the model proxy, when the backend enables it
+npm start                                                         # no model: only the example, no AI planning assistant (chat=false)
 ```
 
 The model is `<provider>:<model-id>`: a provider of the embedding-lib — `anthropic`, `azure`,
@@ -81,18 +81,21 @@ The launcher (`minimal-hi-example/start.mjs`, `planningAssistantConfig`) turns t
 and the options into the `PlanningAssistantConfig` of the embedding-lib — the provider, the model,
 the key, the endpoint, the API, the reasoning effort and the cache breakpoint, and `readsImages`,
 which is `true` for every model. It serves the config to the page at
-`/planning-assistant-config.json`, to this machine only, and opens the page with `&chat=true`, so
-the planner shows the button of the chat window. Without a model the page runs the chat on the
-model proxy when the HI server offers it, and has no chat otherwise. Guarded by
-`minimal-hi-example/tests/start.test.js`.
+`/planning-assistant-config.json`, to this machine only, and opens the page with an explicit
+`chat` parameter: `&chat=true` with a model, so the planner shows the button of the chat window,
+and `&chat=false` without one, so plain `npm start` and `npm run dev` start only the example,
+without the AI planning assistant — even when the HI server offers the model proxy. Without a
+`chat` parameter at all (the page served by another static server) the model proxy decides. Guarded
+by `minimal-hi-example/tests/start.test.js`.
 
 ## The model proxy
 
-Without a model, the chat runs on the model proxy of the HI server: the model, its endpoint and its
-key stay in the backend, and the page authorizes with the Basic authorization of the HI server. The
-page uses it when `/backends/list` answers exactly one backend and that backend's
-`enableAIPlanning` is `true` — the proxy serves only a user of exactly one backend. The page's user
-`test` has several backends, so the example opens without a chat when no model is given.
+The chat runs on the model proxy of the HI server when the page has no `chat` parameter: the model,
+its endpoint and its key stay in the backend, and the page authorizes with the Basic authorization
+of the HI server. The page uses it when `/backends/list` answers exactly one backend and that
+backend's `enableAIPlanning` is `true` — the proxy serves only a user of exactly one backend. The
+launcher always appends `chat=false` without a model, so the example it opens never takes the proxy;
+the page's user `test` has several backends, so without the parameter there is no chat either.
 
 The page passes the planning assistant the provider `openai-compatible` with the base URL
 `https://dfscfgtest01-app.azurewebsites.net/api/ai/v1`, the model name `planning` (the alias of the
@@ -149,7 +152,8 @@ group instead of a merge) got worse. The runs at `high` are not evaluated.
 ## The chat window
 
 The chat window is the **AI Planning Assistant** of the planner (roomle-ui
-`PlanningAssistantChat.vue`). With `?chat=true` or the model proxy the page creates the planner
+`PlanningAssistantChat.vue`). With `?chat=true` — or the model proxy when no `chat` parameter is
+given — the page creates the planner
 with `featureFlags.planningAssistant`, and the button with the adjust icon at
 the bottom of the planner opens the chat in the drawer, where it looks like the
 other panels of the planner. The window shows the messages and the replies; the
@@ -166,8 +170,11 @@ with `?chat=true` without a model from the launcher and without the model proxy 
 unavailable, with the message to start the example with
 `npm start <provider>:<model-id> <api-key>`.
 
-The **Show panel** checkbox shows and hides the debug panel (parameters,
-buttons, console log).
+The arrow button at the very left of the top bar shows and hides the debug
+panel (parameters, buttons, console log) — chevron right while the panel is
+hidden, chevron left while it is shown. The top bar follows the roomle-ui
+look (Lato, white bar, pill buttons, red primary button), as
+`minifabric-example/src/style.css` styles its panel.
 
 The planning assistant keeps the conversation in the page. It requests the
 prompts of the chat from the planner once —
@@ -250,10 +257,11 @@ signed image URLs of the master data and the order data
 
 ```
 [Launcher: minimal-hi-example/start.mjs]
-  ├── serves the example page on :3000
+  ├── serves the example page on :3000 (the next free port when it is taken), opened with
+  │   chat=false without a model — only the example, no AI planning assistant
   └── serves the PlanningAssistantConfig (model, key, endpoint) at
-      /planning-assistant-config.json, to this machine only; without a model,
-      the page takes the model proxy of the HI server
+      /planning-assistant-config.json, to this machine only, with chat=true; without a chat
+      parameter at all, the page takes the model proxy of the HI server
             │
             ▼
 [Browser: index.html]
@@ -298,7 +306,7 @@ are not zero. These are usage measurements, without a price calculation.
 | ------- | ------------- |
 | The window says there is no model for the planning assistant | The page was opened with `?chat=true` without a model and without the model proxy — start with `npm start <provider>:<model-id> <api-key>` |
 | `… is no <provider>:<model-id>` when starting | The model has no provider or an unknown one — write it as `<provider>:<model-id>`, for example `azure:gpt-6-astra` |
-| No chat window without a model | The user of the page has more than one backend, or its backend does not enable the model proxy (`enableAIPlanning`) — start with a model |
+| No chat window without a model | Expected: `npm start` without a model opens the page with `chat=false` — start with a model for the chat; without a `chat` parameter the model proxy needs exactly one backend of the user with `enableAIPlanning` |
 | `the planner has no AI Planning Assistant window - no chat` in the debug log | The planner UI has no planning assistant yet — start with `npm run dev` against a roomle-ui that has it, or a server URL whose planner has it |
 | `failed to load: HI is not available` in the debug log, no chat | The planner was created without its HI module, so it has no prompts for the chat (`getExternalObjectAgentPrompts` rejects) |
 | `The planning assistant failed: …` in the window | The provider rejected the key or the model id, the model reads no images, or a Mistral model got the images of `get-plan-images` — check the key, the exact model id and `--base-url` |

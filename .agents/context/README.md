@@ -42,7 +42,7 @@ deploy it in [setup](../../docs/setup/).
 
 | Process | Started by | Port | Code |
 | ------- | ---------- | ---- | ---- |
-| Example page (static files, the model of its chat) | `npm start` (`minimal-hi-example/start.mjs`) | 3000 (`EXAMPLE_PORT`) | `minimal-hi-example/index.html` |
+| Example page (static files, the model of its chat) | `npm start` (`minimal-hi-example/start.mjs`) | 3000, the next free port when taken (`EXAMPLE_PORT` pins the requested port) | `minimal-hi-example/index.html` |
 | Start page with the sign-in example (`/hi-sc/`) and the minifabric example (`/nobilia-minifabrik/`) on their Vite dev servers | `npm run start:sc` | 3300 | `pages/serve.mjs` |
 | Demo proxy (Functions Framework, local run) | `npm run dev:proxy` | 8080 | `minifabric-example/proxy-server/` |
 

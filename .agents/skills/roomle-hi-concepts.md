@@ -189,9 +189,7 @@ rootId? }`, one point and one rotation.
   `position: [x, y, z]`, `z` the height), so a group may stand on one — plan a sink at the water connection and
   a hob beside a plug. The planner classifies a plan object by the level it has in the planner —
   exactly 27 is an `ElectricPlug`, 28 a `WaterConnection`; no other level, article id or name counts.
-  The catalog lists the wall water connections (`room_designer:water_connections`) at level 43; the
-  planner sets them to 28 when it loads them (roomle-ui `planner-kernel-access.ts`,
-  [roomle-ui-issues 2](../backlog/roomle-ui-issues.md#2-the-water-connection-is-an-installation-element-only-through-a-planner-override)).
+  The catalog lists the wall water connections (`room_designer:water_connections`) at level 28.
   The planner reports one entry per placed supply assembly, its children included, without hidden
   ones. `position` is the
   bottom centre of the element's bounding box (the kernel's `getCenter`) in mm with two decimals —

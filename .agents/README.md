@@ -136,11 +136,7 @@ status block where one is present.
 
 One document per bug: root-cause analysis written **before** the fix, closed out **after** it.
 
-| Document | Status | Last touched |
-|---|---|---|
-| [Kitchen 5: island orientation, back-panel construction and correction feedback](bug-analysis/kitchen-5-island-orientation-and-back-panel.md) | Open | 2026-10-31 |
-| [Back-panel docking anchor and first-create island placement (RML-18346, RML-18351)](bug-analysis/kitchen-back-panel-anchor-and-island-first-placement-RML-18346-18351.md) | Superseded by [island-back-panel-docking-and-placement-anchor-RML-18346-18351.md](bug-analysis/island-back-panel-docking-and-placement-anchor-RML-18346-18351.md) | 2026-11-01 |
-| [Island back panel protrudes and island lands off: the docking derivation and the placement anchor are the root cause (RML-18346, RML-18351)](bug-analysis/island-back-panel-docking-and-placement-anchor-RML-18346-18351.md) | Open | 2026-11-01 |
+None open.
 
 ### Feature Analyses
 
@@ -149,9 +145,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 | [The AI image chat through the model proxy of the HI server](feature-analysis/ai-rendering-through-the-model-proxy.md) | Open — RML-18350 | 2026-10-30 |
-| [A short, prompt-specific opening response from the Planning Assistant](feature-analysis/immediate-planning-assistant-acknowledgement.md) | Implemented on a local branch; pending landing | 2026-10-31 |
 
 ### Refactoring Analyses
 
@@ -160,7 +154,7 @@ done. The analysis and the report are the same document — the report is append
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Planning Assistant performance: what a second of a turn is made of, and the levers that move it](refactoring-analysis/planning-assistant-performance-next-steps.md) | Open — the four prices of a turn (round, reasoning token, output token, planner load); levers A–E: the skills supplied with the request, the tool call before the narration, one load per create, the finishes in the create, the payload with the defaults; sections 6 and 7.2 of the earlier analysis failed and are replaced; C implemented and failed in benchmark 14, reverted | 2026-10-29 |
+| [Planning Assistant performance: what a second of a turn is made of, and the levers that move it](refactoring-analysis/planning-assistant-performance-next-steps.md) | Open — B landed as the opening response of a turn (roomle-ui D131) and C is rejected (roomle-ui D23); still open: A (the word-match skill supply — backlog [planning-assistant-skill-selector.md](backlog/planning-assistant-skill-selector.md)) and the same-group value lists of D | 2026-11-01 |
 
 ### Benchmarks & Performance Analyses
 

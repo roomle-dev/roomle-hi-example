@@ -8,7 +8,17 @@
 > **Backlog**: [Where Mistral Large falls short of the prompts](../backlog/mistral-large-prompt-issues.md), issue 4
 > ("Edits are made with the wrong tool")  
 > **Base**: roomle-hi-example `analyse/mistral-large-prompt-issues-bug-4` (from `master` `7c18480d`); roomle-ui
-> `feat/hi-planning-assistant-lightweight` (`31def74f2`)
+> `feat/hi-planning-assistant-lightweight` (`31def74f2`)  
+> **Fix**: roomle-ui `feat/hi-planning-assistant-lightweight` `72be4d1a2` — the edit tools' descriptions open with
+> the words the user says for the edit and the `create-or-replace-groups` description names the replace as the
+> rebuild and lists the edit tools by those words (`hi-mcp-server.ts`); a replace that only adds, reorders or
+> exchanges root modules answers with a `hint` naming the edit tool, and a replaced row that now reaches past a
+> wall of the room gets the row-reach note (`hi-tool-commands.ts`, `hi-tool-hints.ts` `replaceReachHints`); the
+> group-attribute failure message names `change-module-attribute`/`change-group-attribute` and
+> `exchange-root-module` (`hi-tool-attributes.ts`); unit tests in `__tests__/hi-mcp/hi-mcp-server-test.ts` and
+> `__tests__/hi-tool-commands/create-or-replace-groups-replace-test.ts`, the schema fixture rewritten; durable
+> outcome in roomle-ui D137 and G69–G71 of `hi-tools-behaviour.md` and in `hi-tools-reference.md`. Verified with
+> the unit tests (1745 in `homag-intelligence`); the `mistral:mistral-large-4` prompt-test evaluation is the next step
 
 **Affected repositories**
 

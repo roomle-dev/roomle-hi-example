@@ -417,9 +417,11 @@ transform when either whole docking footprint cannot be measured.
   units of other groups move with the units below them, each within its group, and their groups
   are returned beside the edited group (D42); the only unit is deleted with its group
   (`gapClosed: false`). `delete-article-and-compact` never splits a group
-- `exchange-root-module`: the article has one root module; the new unit keeps the position and
-  the docking of the replaced one; `attributes` override attributes of the new unit (`mod_Width` for
-  another width: the rest of the row moves by the difference, with the units hanging from it, also
+- `exchange-root-module` — the tool for "exchange", "swap the X for a Y", "make it wider, 900 mm
+  wide": the article has one root module; the new unit keeps the position and
+  the docking of the replaced one; `attributes` override attributes of the new unit (the size
+  attribute by its id from the catalog for another width: the rest of the row moves by the
+  difference, with the units hanging from it, also
   in other groups, the end at a wall stays); a docking the new article cannot take is named in
   `corrections`
 - `insert-article-into-group`: the new unit is docked to both roots of `between` (two neighbours in

@@ -18,8 +18,8 @@ reproduce and test them with `mistral-large-latest` (the alias; the Mistral API 
 **Validation.** Every issue is checked against the planner build the example loads
 (`@roomle/embedding-lib@0.0.0-dev-4c2797a`, roomle-ui `release/bo-test`): none of the directions is
 in the served text, the input schemas, the results or the hints as they stand, so no issue is
-removed — all 13 stay open. Reproducibility is rated per issue below and in the overview:
-high — most runs of the affected model, medium — several runs, low — one or two runs.
+removed — all 13 stay open. Reproducibility is rated per issue below and in the overview by the
+runs that show it of the affected model: high — 9 or more runs, medium — 3 to 8, low — 1 or 2.
 
 The chat model `mistral-large-latest` fulfils far fewer prompts than the GPT models: 23 pass,
 17 partial, 16 fail of 56 runs, while gpt-6-astra passed 55 of 56 runs that morning — the same

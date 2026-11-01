@@ -617,7 +617,7 @@ team until the replay places the cause in the library.
 **Test.** `image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text`: the backsplash
 of the image is generated; where it is not, the answer reports the omission.
 
-**Reproduce.** `mcp-test-2026-10-28_19-47-49`, gpt-6-astra 73 (`image-kitchen-tall-column-right-corner`, bo-test): after the create built the kitchen, `change-group-attribute` sets `mod_CreateBacksplash` true on group `688312fb`; the generated `mr_Backsplash` fails Error 14034 (`part_Backsplash - undefined - undefined - undefined - 1761 - 110`), nothing is changed, and the answer names the missing backsplash.
+**Reproduce.** `mcp-test-2026-11-01_09-10-42`, gpt-6-astra 73 (`image-kitchen-tall-column-right-corner`, local dev :5173): after the create built the kitchen, `change-group-attribute` sets `mod_CreateBacksplash` true on group `7b39e93b`; the generated `mr_Backsplash` fails Error 14034, nothing is changed, and the answer names the missing backsplash.
 
 ## 11. A handle strip the library cannot calculate
 
@@ -838,7 +838,7 @@ proposed — the unit and the hob are both wanted.
 **Test.** `image-planning-right-wall`: the island carries its hob unit with the Bora hob at the
 first create, without a replacement.
 
-**Reproduce.** `mcp-test-2026-10-26_11-51-16`, gpt-6-astra 09 (`image-planning-right-wall`, local `feat/hi-mcp-performance`, default reasoning): the first create sends `UKS2A90` with `mod_HobSupplier` Bora, `mod_HobId` PUXU and no-handle setting 10; the island fails Error 13008 (`Legrabox - 533 - 0`) while the tall bank builds. Resubmitting the island with `UKB2A90` and the same hob succeeds; snapshot `ps_sxj11r22858wir474hwiftq77oshh62c` contains both groups.
+**Reproduce.** `mcp-test-2026-11-01_09-10-42`, gpt-6-astra 70 (`image-planning-right-wall`, local dev :5173): the first create sends `UKS2A90` with `mod_HobSupplier` Bora and fails Error 13008 in `tab_DrawerBoxDimensionMapping`; resubmitting with `UKB2A90` succeeds.
 
 ## 18. A wide paired-door wall cabinet with a push opening the library cannot calculate
 

@@ -25,7 +25,7 @@ on GitHub Pages under `/roomle-hi-example/`.
 
 | Image (`pages/assets/`) | Shows | Source |
 | ----------------------- | ----- | ------ |
-| `favicon.png` | the favicon of the start page and of every example page | the HI icon (the white isometric R on red), 512 × 512 PNG |
+| `favicon.png` | the favicon of the start page and of every example page | the HI icon, kept at `docs/images/favicon-roomle.png` (512 × 512 PNG) |
 | `homag-intelligence.jpg` | the tile of both HI examples: the HI shelves | a section of `hi-sc-example/src/assets/say-hi-to-homag-intelligence.jpg` |
 | `ligna-store.jpg` | the tile of the ligna-store: planning in the store | ligna-store `images/home/kitchen_1.png`, as JPEG at 600 px |
 | `ligna-store-kitchen.jpg` | the background, darkened by a gradient: a kitchen | ligna-store `images/home/headerbild.png`, as JPEG |

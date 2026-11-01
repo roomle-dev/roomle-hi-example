@@ -58,11 +58,11 @@ library cannot calculate.
 | 2 | [Flip-lift wall cabinets with sizes the library cannot calculate](#2-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet descs done; supported heights and width/opening combinations not reported | low — the cabinets are not built, the agent needs a second create |
 | 3 | [End panels with a plain upright colour the library cannot calculate](#3-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the upright descs done; the colour value descs not done; the calculation error not reported | low — the end panels are not built, the agent needs one or two extra calls |
 | 6 | [Articles with two doors that do not say how their doors stand](#6-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG Furniture_Smith | HOMAG library development team | the article and attribute descs done; `LeftLeft` and `RightRight` not reported | low — two doors one above the other taken for a pair are not built, the agent needs a second call |
-| 7 | [Tall-unit descriptions omit width-dependent door arrangements](#7-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG Furniture_Smith | HOMAG library development team | the `HTB60` desc done; the shared resize guidance open; the calculation error not reported | medium — a widened unit keeps an incompatible single-door hinge input |
+| 7 | [Tall-unit descriptions omit width-dependent door arrangements](#7-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG Furniture_Smith | HOMAG library development team | the `HTB60` desc and the shared resize guidance done; the calculation error not reported | medium — a widened unit keeps an incompatible single-door hinge input |
 | 8 | [Base units narrowed to 150 mm the library cannot calculate](#8-base-units-narrowed-to-150-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the width desc done; the calculation error not reported | low — the unit is not built, the agent needs a second create |
 | 12 | [A worktop on the tall units from the group's countertop switch](#12-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — a worktop on top of the tall units |
 | 15 | [The shelf descriptor names no format](#15-the-shelf-descriptor-names-no-format) | HOMAG Furniture_Smith | HOMAG library development team | the desc names the default spacing; the actual format and example open | low — the number of adjustable shelves cannot be set, so "one more shelf" is not possible with adjustable shelves |
-| 21 | [The sink descriptions: a value desc with its pasted table row, and what None builds](#21-the-sink-descriptions-a-value-desc-with-its-pasted-table-row-and-what-none-builds) | HOMAG Furniture_Smith | HOMAG library development team | the sink descriptions done (1.1, 2.8); open: the desc of `Axia_Anthrazit_R`, `None` | low — the side rule and the reaches are in the library |
+| 21 | [The sink descriptions: a value desc with its pasted table row, and what None builds](#21-the-sink-descriptions-a-value-desc-with-its-pasted-table-row-and-what-none-builds) | HOMAG Furniture_Smith | HOMAG library development team | the sink descriptions done (1.1, 2.8); open: what `None` builds | low — the side rule and the reaches are in the library |
 | 23 | [The island back panel names no peninsula](#23-the-island-back-panel-names-no-peninsula) | HOMAG Furniture_Smith | HOMAG library development team | both descs done | medium — the panel keeps its own length, the agent sends the group again |
 
 ### Not solved entirely by descriptions
@@ -81,7 +81,7 @@ library cannot calculate.
 | 16 | [A built-in microwave selected on the tall oven housing is not built](#16-a-built-in-microwave-selected-on-the-tall-oven-housing-is-not-built) | HOMAG Furniture_Smith | HOMAG library development team | the housing and appliance-code descs done; the missing second appliance not reported | partly | medium — the agent reports an appliance that is not in the plan |
 | 17 | [A Bora hob on the base hob cabinet UKS2A90 the library cannot calculate](#17-a-bora-hob-on-the-base-hob-cabinet-uks2a90-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the unit is not built, the agent replaces it |
 | 18 | [A wide paired-door wall cabinet with a push opening the library cannot calculate](#18-a-wide-paired-door-wall-cabinet-with-a-push-opening-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no | low — the requested upper cabinet needs a replacement |
-| 19 | [A traditional front program with a retained plain colour the library cannot calculate](#19-a-traditional-front-program-with-a-retained-plain-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the sequencing desc proposed; calculation error not reported | partly | medium — switching the program needs an extra colour change |
+| 19 | [A traditional front program with a retained plain colour the library cannot calculate](#19-a-traditional-front-program-with-a-retained-plain-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the sequencing desc done; calculation error not reported | partly | medium — switching the program needs an extra colour change |
 | 20 | [A push-to-open sink unit without the front gap it needs the library cannot calculate](#20-a-push-to-open-sink-unit-without-the-front-gap-it-needs-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the unit is not built, the agent needs a second create |
 | 22 | [A worktop at 40 mm the library cannot calculate](#22-a-worktop-at-40-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the worktop of the create keeps its finish, the agent needs a second call |
 
@@ -236,10 +236,10 @@ program with the front colour, or rules a plain colour under a wood program out 
 options of the end panels (D107); with the switch the agent needs no second attribute, and the desc
 of `mod_UprightColor` keeps its first sentence. Then check that the served text needs nothing more.
 
-**Status.** Done in the library: the descs of `mod_UprightColor`, `mod_UprightProgram` and its values
-(section 2.4). Open: the kind in the colour value descs (section 2.1); the program values of
-`mod_CarcaseProgram` and `mod_CarcaseOutsideProgram` keep their old descs. Open, not reported to the
-library development team: the calculation error.
+**Status.** Done in the library: the descs of `mod_UprightColor`, `mod_UprightProgram` and its values,
+and the program values of `mod_CarcaseProgram` and `mod_CarcaseOutsideProgram` (section 2.4). Open:
+the kind in the colour value descs (section 2.1). Open, not reported to the library development
+team: the calculation error.
 
 **Test.** `kitchen-conversation` turn 1 and `image-kitchen-back-right-corner`: the first create with
 a plain upright colour builds its end panels.
@@ -407,15 +407,13 @@ hinged at the outer sides, with values the library calculates.
 **Problem.** At 900 mm, the calculated `HTB60` has paired doors with `Automatic` or `LeftRight`;
 retaining `mod_DoorDirectionSelection: Right` gives Error 14019 and an incomplete root.
 The article description explains the 600 and 900 mm configurations and the retained setting to
-correct. The shared Door direction description still asks for `Right` at a row's right end without
-explaining that resizing can turn a single-door unit into a paired-door unit.
+correct, and the shared Door direction description carries the resize guidance.
 
 **Cause.** A library bug (D99), the error of [issue 9](#9-wall-units-resized-with-a-fixed-door-direction-the-library-cannot-calculate)
 on a tall unit: with `Automatic` the library chooses the door arrangement by the width, and a fixed
 `mod_DoorDirectionSelection` of the other arrangement has no entry in `tab_DoorSettings` at that
 width. The library's conflict resolution does not change the door direction with the width, and it
-gives no verified options for `mod_Width` and `mod_DoorDirectionSelection`. The shared Door direction
-description omits resize guidance.
+gives no verified options for `mod_Width` and `mod_DoorDirectionSelection`.
 
 **How the library behaves.** Checked in the probe of 2026-10-24 and in the stored runs:
 
@@ -426,14 +424,14 @@ description omits resize guidance.
 | `Right`, then widened | 900 mm | no: Error 14019 ("… TallUnit - All - Standard - 240 - mr_StorageunitSingle - 900 - Automatic - Right - Automatic") |
 | `LeftRight`, before widening | 600 mm, as it comes | no: Error 14019 ("… 600 - Automatic - LeftRight - Automatic"); sent with `mod_Width` 900 in one exchange, built (`mcp-test-2026-10-28_19-47-49` gpt-6-astra 12, 27) |
 
-**To do.** Apply the proposed shared resize guidance in
-[section 2.6](../../docs/library-information/suggested-library-changes.md#26-door-direction).
-Keep the facts in library data; the verified nominal and widened configurations do not
+**To do.** The shared resize guidance of
+[section 2.6](../../docs/library-information/suggested-library-changes.md#26-door-direction) is in
+the library; keep the facts in library data — the verified nominal and widened configurations do not
 establish an intermediate-width threshold. The library bug: as in issue 9.
 
-**Status.** Done in the library: the complete `HTB60` description (section 1.5). Open: the shared
-Door direction resize guidance (section 2.6). Open, not reported to the library development team:
-the calculation error.
+**Status.** Done in the library: the complete `HTB60` description (section 1.5) and the shared Door
+direction resize guidance (section 2.6). Open, not reported to the library development team: the
+calculation error.
 
 **Test.** `edit-swap-units`: the agent corrects incompatible retained input after resizing,
 then swaps the complete paired-door unit into the back corner. The row is contiguous at
@@ -897,12 +895,12 @@ The supported full colour range of `Tradition` is not established by this run.
 
 **To do.** The library: selecting `Tradition` resolves its colour conflict to a compatible
 wood colour, or exposes the incompatible combination in verified options before calculation.
-Apply the proposed sequencing guidance of `Tradition` in
-[section 2.2](../../docs/library-information/suggested-library-changes.md#22-front-program),
-which keeps the compatibility information in library data.
+The sequencing guidance of `Tradition` in
+[section 2.2](../../docs/library-information/suggested-library-changes.md#22-front-program) is in the
+library, keeping the compatibility information in library data.
 
-**Status.** The desc is proposed, not applied. The calculation error is not reported to the
-library development team.
+**Status.** Done in the library: the desc of `Tradition` (section 2.2). Open, not reported to the
+library development team: the calculation error.
 
 **Test.** `image-kitchen-tall-column-right-corner`: switching to the supported traditional
 frame style calculates or resolves the colour conflict before any failed transaction, with an
@@ -958,34 +956,30 @@ first create.
 
 **Library.** HOMAG Furniture_Smith. **Responsible.** HOMAG library development team.
 
-**Problem.** The desc of the value `Axia_Anthrazit_R` of `mod_SinkId` begins with the pasted table
-row of the suggested changes — "Axia color anthrazit basin right | see 2.8 | Blanco Axia sink in
-anthracite: …" — and has no final full stop. The value `None` leaves an outline that reaches past
-the right side of the sink unit as a basin-left sink does.
+**Problem.** The value `None` of `mod_SinkId` leaves an outline that reaches past the right side of
+the sink unit as a basin-left sink does.
 
-**Cause.** The paste of section 2.8 of
-[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#28-sink)
-took the whole row for this value. What `None` builds is not known.
+**Cause.** What `None` builds is not known.
 
 **How the library behaves.** Measured on the planner, a row `UTB60` | sink unit | `UTB60`: the
 drainer lies opposite the basin — a value ending in `_L` reaches past the right side of the sink
 unit, one ending in `_R` past the left side —, Axia 396 mm past a 60 cm unit and 246 mm past a 90 cm
 unit, Axis 401 / 251 mm, Dinas 340 / 190 mm, Metra 410 / 260 mm; `None` 401 / 251 mm past the right
 side. `SUT60` comes with `Metra_R`, the four other sink units with `Axia_Grey_L`. The descriptions of
-the five sink units (1.1) and of `mod_SinkId` and its other values (2.8) say so; in benchmark 09 a
+the five sink units (1.1) and of `mod_SinkId` and its values (2.8) say so; in benchmark 09 a
 base unit stands on the drainer side of the sink unit in all four runs
 ([the comparison](../benchmarks/az-cmp-2026-10-27.md#09-against-the-baselines)).
 
-**To do.** The library: the desc of `Axia_Anthrazit_R` is the proposed text of 2.8 alone; explain
-what `None` builds; when the sink a unit comes with changes, its `FUNCTION` line changes with it.
+**To do.** The library: explain what `None` builds; when the sink a unit comes with changes, its
+`FUNCTION` line changes with it.
 
-**Status.** Done in the library: the descriptions of the five sink units and of `mod_SinkId` and ten
-of its values. Open, not reported to the library development team: the desc of `Axia_Anthrazit_R`
-and `None`.
+**Status.** Done in the library: the descriptions of the five sink units (section 1.1) and of
+`mod_SinkId` and all its values, `Axia_Anthrazit_R` included (section 2.8). Open, not reported to
+the library development team: what `None` builds.
 
 **Test.** The master data: the desc of `Axia_Anthrazit_R` is the text of 2.8.
 
-**Reproduce.** `docs/library-information/master-data.json`, the selections of `mod_SinkId`.
+**Reproduce.** `docs/library-information/master-data.json`, the value `None` of `mod_SinkId`.
 
 ## 22. A worktop at 40 mm the library cannot calculate
 

@@ -16,8 +16,10 @@ item. Keep the entry after it is applied; revise that entry when a further chang
 
 Statuses compare the texts with the Furniture_Smith backend `HI_PRE_Roomle_Milestone_2`, in English:
 the [article list](article.json) and [master data](master-data.json), plus the unfiltered backend
-article list for `AdjShelves` (a sub-article excluded from `article.json`). Applied means the library
-carries the description; it does not mean the underlying calculation issue is resolved.
+article list for `AdjShelves` (a sub-article excluded from `article.json`). A status here is only
+**applied** or **open**: applied means the library carries the description. What is still open beyond
+a description — a calculation failure, a missing format, a result-field wording — is not tracked
+here; it lives in [`.agents/backlog/library-issues.md`](../../.agents/backlog/library-issues.md).
 
 ## Overview
 
@@ -32,16 +34,16 @@ carries the description; it does not mean the underlying calculation issue is re
 | [1.7 Tall oven housing](#17-tall-oven-housing) | `HOTS2AB60` | applied |
 | [1.8 Island back panel](#18-island-back-panel) | `RWV` | applied |
 | [2.1 Colour values](#21-colour-values) | the colour list of `mod_FrontColor`, `mod_CarcaseColor`, `mod_UprightColor` and the other colour attributes | open |
-| [2.2 Front program](#22-front-program) | `mod_FrontProgram` | Modern applied; Tradition sequencing proposed |
+| [2.2 Front program](#22-front-program) | `mod_FrontProgram` | applied |
 | [2.3 Carcase colours](#23-carcase-colours) | `mod_CarcaseColor`, `mod_CarcaseOutsideColor` | applied |
-| [2.4 Upright colour and program](#24-upright-colour-and-program) | `mod_UprightColor`, `mod_UprightProgram` | applied; the program values of `mod_CarcaseProgram` and `mod_CarcaseOutsideProgram` keep their old descs |
+| [2.4 Upright colour and program](#24-upright-colour-and-program) | `mod_UprightColor`, `mod_UprightProgram` | applied |
 | [2.5 Handle design](#25-handle-design) | `mod_HandleDesign` | applied |
-| [2.6 Door direction](#26-door-direction) | `mod_DoorDirectionSelection` | applied; resize guidance open |
+| [2.6 Door direction](#26-door-direction) | `mod_DoorDirectionSelection` | applied |
 | [2.7 Handle position type](#27-handle-position-type) | `mod_HandlePosType` | applied |
-| [2.8 Sink](#28-sink) | `mod_SinkId` | applied; the desc of `Axia_Anthrazit_R` carries the pasted table row |
+| [2.8 Sink](#28-sink) | `mod_SinkId` | applied |
 | [2.9 Width](#29-width) | `mod_Width` | applied |
-| [2.10 Backsplash](#210-backsplash) | `mod_CreateBacksplash` | applied; result-field wording needs correction |
-| [2.11 Shelf descriptor](#211-shelf-descriptor) | `mod_ShelfadjDescriptor` | text applied; actual format and example open |
+| [2.10 Backsplash](#210-backsplash) | `mod_CreateBacksplash` | applied |
+| [2.11 Shelf descriptor](#211-shelf-descriptor) | `mod_ShelfadjDescriptor` | applied |
 | [2.12 Oven article codes](#212-oven-article-codes) | `mod_OvenId1`, `mod_OvenId2`, `mod_OvenId3` | applied |
 | [2.13 Island back panel length](#213-island-back-panel-length) | `mod_IslandBackwallWidth` | applied |
 | [3.1 Island back panel construction](#31-island-back-panel-construction) | `mr_IslandBackwall` | applied |
@@ -369,10 +371,7 @@ AI_SELECTION_HINT: Select for a compartment that shows no shelves. A cabinet des
 
 ### 1.7 Tall oven housing
 
-**Status.** Applied verbatim. The unit carries one built-in appliance; a second appliance
-code (a microwave above the oven) is accepted but not built, and nothing reports the drop, so the
-agent reports a microwave that is not in the plan
-([library issue 16](../../.agents/backlog/library-issues.md#16-a-built-in-microwave-selected-on-the-tall-oven-housing-is-not-built)).
+**Status.** Applied verbatim (checked 2026-11-01 against the article list).
 
 `HOTS2AB60` (TODDR2PS60) — 995 characters:
 
@@ -407,7 +406,7 @@ Select when a built-in oven at working height is requested. The unit carries one
 
 ### 1.8 Island back panel
 
-**Status.** Applied verbatim (verified 2026-10-31 against the backend article catalog). The library carries the construction, height, peninsula and length guidance. The desc of the length
+**Status.** Applied verbatim (checked 2026-11-01 against the article list). The desc of the length
 attribute is [2.13](#213-island-back-panel-length); the module proposal is
 [3.1](#31-island-back-panel-construction).
 
@@ -475,7 +474,7 @@ the plain, wood or stone classification or the restriction on stone fronts.
 | `Modern` | Modern | Mitred frame fronts with glass filling | Mitred frame doors with glass filling, in stone decors. Drawers, pull-outs and flaps are not built with it: an article with them takes another program. |
 | `Tradition` | Tradition | Traditional frame fronts with wooden filling | Traditional frame fronts with wooden filling. When changing from a plain front colour, choose a supported wood Front color before selecting this program. |
 
-**Status.** `Modern`: applied. `Tradition`: proposed, not applied. The program/colour conflict also needs the library change of [issue 19](../../.agents/backlog/library-issues.md#19-a-traditional-front-program-with-a-retained-plain-colour-the-library-cannot-calculate).
+**Status.** Applied verbatim for both values (checked 2026-11-01 against the master data).
 
 ### 2.3 Carcase colours
 
@@ -490,7 +489,11 @@ the plain, wood or stone classification or the restriction on stone fronts.
 
 **Attributes.** `mod_UprightColor` (Color, group Upright) and `mod_UprightProgram` (Upright Program)
 — the end and cover panels `W60H`, `W60U` and `W35O`. The three program values are the same for
-`mod_CarcaseProgram` and `mod_CarcaseOutsideProgram`; the proposed value descs fit all three.
+`mod_CarcaseProgram` and `mod_CarcaseOutsideProgram` and carry the same descs.
+
+**Status.** Applied verbatim (checked 2026-11-01 against the master data): the two attribute descs
+and the three program values of `mod_UprightProgram`, `mod_CarcaseProgram` and
+`mod_CarcaseOutsideProgram`.
 
 | Attribute or value | Name | `desc` before | Proposed `desc` |
 |---|---|---|---|
@@ -513,19 +516,18 @@ the plain, wood or stone classification or the restriction on stone fronts.
 
 **Attribute.** `mod_DoorDirectionSelection` (Door direction).
 
+**Status.** Applied verbatim for the attribute and all six values (checked 2026-11-01 against the
+master data).
+
 | Attribute or value | Name | `desc` in the library |
 |---|---|---|
-| `mod_DoorDirectionSelection` | Door direction | The side a door is hinged on, as seen from the front: the handle is on the other side, and the door opens to the hinge side. Left and Right are for single doors, also two doors one above the other; Left & Right is for a pair of doors side by side. Automatic hinges a single door on the left wherever the cabinet stands: in a row, set the door at the right end to Right, so no handle is on the outside of the row. |
+| `mod_DoorDirectionSelection` | Door direction | The side a door is hinged on, as seen from the front: the handle is on the other side. Left and Right are for single doors, also two doors one above the other; Left & Right is for a pair of doors side by side. Resizing can change the door arrangement: use the arrangement at the requested size, not the nominal article description. Automatic selects that arrangement's default: a single door hinged left, a side-by-side pair hinged at both outer sides. A single door at a row's right end needs Right; a paired unit keeps both outer hinges at either end. |
 | `Left` | Left | Hinged on the left, as seen from the front: the handle on the right, the door opens to the left. For single doors. |
 | `Right` | Right | Hinged on the right, as seen from the front: the handle on the left, the door opens to the right. For single doors. |
 | `LeftRight` | Left & Right | A pair of doors side by side: the left door hinged on the left, the right door on the right, as seen from the front; the handles meet in the middle. |
 | `LeftLeft` | Left & Left | A pair of doors side by side, both hinged on the left, as seen from the front. |
 | `RightRight` | Right & Right | A pair of doors side by side, both hinged on the right, as seen from the front. |
 | `Automatic` | Automatic | Setting via tab_DoorSettings. The library chooses: a single door hinged on the left, a pair of doors side by side left and right — wherever the cabinet stands in a row. |
-
-Additional proposed `mod_DoorDirectionSelection.desc` for resizing (not applied):
-
-> The side a door is hinged on, as seen from the front: the handle is on the other side. Left and Right are for single doors, also two doors one above the other; Left & Right is for a pair of doors side by side. Resizing can change the door arrangement: use the arrangement at the requested size, not the nominal article description. Automatic selects that arrangement's default: a single door hinged left, a side-by-side pair hinged at both outer sides. A single door at a row's right end needs Right; a paired unit keeps both outer hinges at either end.
 
 ### 2.7 Handle position type
 
@@ -549,12 +551,8 @@ In the library, as proposed:
 
 ### 2.8 Sink
 
-**Status.** Applied verbatim (checked 2026-10-28 against the master data), except the value
-`Axia_Anthrazit_R`: its desc carries the pasted table row, "Axia color anthrazit basin right | see
-2.8 | Blanco Axia sink in anthracite: …", without the final full stop; its desc is to be the proposed
-text alone. `None` keeps its desc: its outline still reaches 401 / 251 mm past the right side, which
-the library team is asked to explain
-([library issue 21](../../.agents/backlog/library-issues.md#21-the-sink-descriptions-a-value-desc-with-its-pasted-table-row-and-what-none-builds)).
+**Status.** Applied verbatim for the attribute and all twelve values (checked 2026-11-01 against
+the master data), `Axia_Anthrazit_R` included.
 
 **Attribute.** `mod_SinkId` (Article code of the sink), group Sink. Its desc states the rule for
 every sink unit — the attributes section lists `mod_SinkId` with the number of its values (D122),
@@ -581,8 +579,7 @@ measured on `SUT60` (60 cm) and `SUB2A90` (90 cm).
 
 ### 2.9 Width
 
-**Status.** Applied verbatim. The calculation issue remains open
-([library issue 8](../../.agents/backlog/library-issues.md#8-base-units-narrowed-to-150-mm-the-library-cannot-calculate)).
+**Status.** Applied verbatim (checked 2026-11-01 against the master data).
 
 **Attribute.** `mod_Width` (Width).
 
@@ -592,10 +589,7 @@ measured on `SUT60` (60 cm) and `SUB2A90` (90 cm).
 
 ### 2.10 Backsplash
 
-**Status.** Applied verbatim. The result-field wording still needs correction: a failed attribute
-edit returns a calculation error rather than `notLoaded`. The cause of the calculation failure
-remains open
-([library issue 10](../../.agents/backlog/library-issues.md#10-backsplashes-the-library-cannot-calculate)).
+**Status.** Applied verbatim (checked 2026-11-01 against the master data).
 
 **Attribute.** `mod_CreateBacksplash` (Create backsplash).
 
@@ -605,8 +599,7 @@ remains open
 
 ### 2.11 Shelf descriptor
 
-**Status.** Text applied verbatim, but incomplete: "the format, with an example (to be named by
-the library)" is still a placeholder. The actual format and an example remain open.
+**Status.** Applied verbatim, placeholder included (checked 2026-11-01 against the master data).
 
 **Attribute.** `mod_ShelfadjDescriptor` (Descriptor), carried by the door modules of the cabinets
 with adjustable shelves and by `me_ShelfadjMultiple01`. The format of the descriptor is not known;
@@ -619,10 +612,7 @@ the library development team names it
 
 ### 2.12 Oven article codes
 
-**Status.** Applied verbatim for all three attributes. The three codes select the built-in
-appliance of a unit; on a unit with one appliance niche a second or third code is accepted but not
-built, and nothing reports the drop
-([library issue 16](../../.agents/backlog/library-issues.md#16-a-built-in-microwave-selected-on-the-tall-oven-housing-is-not-built)).
+**Status.** Applied verbatim for all three attributes (checked 2026-11-01 against the master data).
 
 **Attribute.** `mod_OvenId1`, `mod_OvenId2`, `mod_OvenId3` (Article code 1 / 2 / 3), group Oven.
 
@@ -634,7 +624,7 @@ built, and nothing reports the drop
 
 ### 2.13 Island back panel length
 
-**Status.** Applied verbatim ([library issue 23](../../.agents/backlog/library-issues.md#23-the-island-back-panel-names-no-peninsula)).
+**Status.** Applied verbatim (checked 2026-11-01 against the master data).
 The article's desc is [1.8](#18-island-back-panel).
 
 **Attribute.** `mod_IslandBackwallWidth` (Width), the module `mr_IslandBackwall` of `RWV`.

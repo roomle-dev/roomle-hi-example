@@ -41,5 +41,5 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 | Document | Status | Date |
 |---|---|---|
 | [Kitchen 5: island orientation, back-panel construction and correction feedback](kitchen-5-island-orientation-and-back-panel.md) | Open | 2026-10-31 |
-| [Back-panel anchor and island first placement still wrong after the 2026-10-31 fixes (RML-18346, RML-18351)](kitchen-back-panel-anchor-and-island-first-placement-RML-18346-18351.md) | Open | 2026-11-01 |
+| [Back-panel anchor and island first placement still wrong after the 2026-10-31 fixes (RML-18346, RML-18351)](kitchen-back-panel-anchor-and-island-first-placement-RML-18346-18351.md) | Superseded by [island-back-panel-docking-and-placement-anchor-RML-18346-18351.md](island-back-panel-docking-and-placement-anchor-RML-18346-18351.md) | 2026-11-01 |
 | [Island back panel protrudes and island lands off: the docking derivation and the placement anchor are the root cause (RML-18346, RML-18351)](island-back-panel-docking-and-placement-anchor-RML-18346-18351.md) | Open | 2026-11-01 |

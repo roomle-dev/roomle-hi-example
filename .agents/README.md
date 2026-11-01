@@ -139,6 +139,8 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | Document | Status | Last touched |
 |---|---|---|
 | [Kitchen 5: island orientation, back-panel construction and correction feedback](bug-analysis/kitchen-5-island-orientation-and-back-panel.md) | Open | 2026-10-31 |
+| [Back-panel docking anchor and first-create island placement (RML-18346, RML-18351)](bug-analysis/kitchen-back-panel-anchor-and-island-first-placement-RML-18346-18351.md) | Superseded by [island-back-panel-docking-and-placement-anchor-RML-18346-18351.md](bug-analysis/island-back-panel-docking-and-placement-anchor-RML-18346-18351.md) | 2026-11-01 |
+| [Island back panel protrudes and island lands off: the docking derivation and the placement anchor are the root cause (RML-18346, RML-18351)](bug-analysis/island-back-panel-docking-and-placement-anchor-RML-18346-18351.md) | Open | 2026-11-01 |
 
 ### Feature Analyses
 

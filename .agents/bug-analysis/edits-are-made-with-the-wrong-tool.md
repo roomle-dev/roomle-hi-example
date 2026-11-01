@@ -1,9 +1,9 @@
 # Edits are made with the wrong tool
 
 > **Type**: Bug Analysis  
-> **Status**: Open — the fix goes on roomle-ui `feat/hi-planning-assistant-lightweight`, and the analysis
-> stays open until it lands on `release/bo-test` or `master`; ["cleanup analyses"](../skills/hi-analysis-cleanup.md)
-> closes and deletes it  
+> **Status**: Open — the fix is implemented and verified on the working branch, and the analysis stays open until
+> it lands on `release/bo-test` or `master`; ["cleanup analyses"](../skills/hi-analysis-cleanup.md) closes and
+> deletes it  
 > **Date**: 2026-11-01  
 > **Backlog**: [Where Mistral Large falls short of the prompts](../backlog/mistral-large-prompt-issues.md), issue 4
 > ("Edits are made with the wrong tool")  
@@ -18,7 +18,7 @@
 > `exchange-root-module` (`hi-tool-attributes.ts`); unit tests in `__tests__/hi-mcp/hi-mcp-server-test.ts` and
 > `__tests__/hi-tool-commands/create-or-replace-groups-replace-test.ts`, the schema fixture rewritten; durable
 > outcome in roomle-ui D137 and G69–G71 of `hi-tools-behaviour.md` and in `hi-tools-reference.md`. Verified with
-> the unit tests (1745 in `homag-intelligence`); the `mistral:mistral-large-4` prompt-test evaluation is the next step
+> the unit tests (1745 in `homag-intelligence`) — see §6
 
 **Affected repositories**
 
@@ -162,3 +162,30 @@ library in the descriptions — the size attribute and its values come from the 
    in §3) and `hi-tools-reference.md`; here `.agents/skills/hi-mcp-tools.md`.
 
 No change to `get-plan-context`, the planner methods, the group operations, `glue-logic.ts` or the library.
+
+## 6. Validation
+
+- Unit tests: 1745 in roomle-ui `packages/web-sdk/packages/homag-intelligence` pass (`npm run test -- run
+  packages/homag-intelligence`), including the new description tests in `__tests__/hi-mcp/hi-mcp-server-test.ts`
+  and `describe('create-or-replace-groups on a replace of an existing group')` in
+  `__tests__/hi-tool-commands/create-or-replace-groups-replace-test.ts`; the served-schema fixture
+  `hi-mcp-fixture-test.ts` passes with the rewritten fixture; `lint:code`, `lint:types` and prettier clean.
+- Prompt-test evaluation with `mistral:mistral-large-4` (the model whose 4 of 52 runs of
+  `mcp-test-2026-10-21_16-59-20` showed this issue), against the local roomle-ui dev server on
+  `feat/hi-planning-assistant-lightweight` (`5bef43482`, `--dev`): session
+  `.temp/result/mcp-test-eval-bug4-2026-11-01_18-27-17` — the 18 `group edit` tests plus `undo-last-change`
+  and `undo-a-wrong-command` of `docs/test-prompts.json`, `randomTests` 0. Report:
+  `.temp/result/mcp-test-eval-bug4-2026-11-01_18-27-17/report.md`, PDF
+  `.temp/reports/mcp-test-eval-bug4-2026-11-01_mistral-mistral-large-4.pdf`.
+  - 20 pass, 0 partial, 0 fail, 0 bugs; every run exit 0 with no errors.
+  - **No run re-sent a group with `create-or-replace-groups` for an edit** — zero create calls in all 20
+    `planner-calls.json`. Every edit used its own tool: add → `merge-article-into-group` (01, 04, 18),
+    exchange/widen → `exchange-root-module` with the size attribute in its attributes (02, 08, 09 — the
+    `edit-replace-unit-wider` run sent `mod_Width 900`, the exact case large-4 36 got wrong with Error 14019),
+    material → `change-group-attribute` / `change-module-attribute` (03, 17), insert →
+    `insert-article-into-group` (10, 11, 12), swap → `swap-root-modules` (15, 17), delete →
+    `delete-article-in-place` for "leave the gap"/"delete the middle unit" (05, 16, 19, 20) and
+    `delete-article-and-compact` only where the prompt says close the gap (06, 13, 14) — large-4 44/45/46's
+    wrong default is gone —, `delete-group` (07), `merge-groups` after the in-place delete (16), `undo` (19, 20).
+  - Spot-checked plans against the expects: 05 two groups of 600 mm with the 600 mm gap between; 09 row
+    2100 mm wide; 16 and 20 one group after the merge/undo sequence; 19 one group restored by undo.

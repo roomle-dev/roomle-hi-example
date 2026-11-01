@@ -136,7 +136,9 @@ status block where one is present.
 
 One document per bug: root-cause analysis written **before** the fix, closed out **after** it.
 
-None open.
+| Document | Status | Last touched |
+|---|---|---|
+| [The payload format is guessed: relations and ids the server does not read](bug-analysis/guessed-payload-format.md) | Open — fix on roomle-ui `feat/hi-planning-assistant-lightweight`, until it lands on `release/bo-test` or `master` | 2026-11-01 |
 
 ### Feature Analyses
 

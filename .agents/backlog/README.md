@@ -1,7 +1,10 @@
 # Backlog
 
 What is still to be done in and around roomle-hi-example: defects, hardening and follow-ups, one row
-per item. The backlog holds open work only. An item leaves it when its fix is in the code.
+per item. The backlog holds open work only. An item leaves it as soon as its fix is implemented and
+verified — on the working branch, in the same change as the fix. A pending merge, release or
+deployment does not keep an implemented and verified item in the backlog; that status and the
+release verification go into the item's analysis, never into a backlog row.
 
 ## Planning by the MCP server
 

@@ -17,8 +17,7 @@ reproduce and test them with `mistral-large-latest` (the alias; the Mistral API 
 
 **Validation.** Every issue is checked against the planner build the example loads
 (`@roomle/embedding-lib@0.0.0-dev-4c2797a`, roomle-ui `release/bo-test`): none of the directions is
-in the served text, the input schemas, the results or the hints as they stand, so no issue is
-removed — all 13 stay open. Reproducibility is rated per issue below and in the overview by the
+in the served text, the input schemas, the results or the hints as they stand, so the other 12 stay open. Reproducibility is rated per issue below and in the overview by the
 runs that show it of the affected model: high — 9 or more runs, medium — 3 to 8, low — 1 or 2.
 
 The chat model `mistral-large-latest` fulfils far fewer prompts than the GPT models: 23 pass,
@@ -56,7 +55,6 @@ result (11), the hinge of a new row end (12) and the speed (13) come with it.
 
 | # | Issue | Runs mistral-large-latest (of 56) | Runs mistral-large-4 (of 52) | Reproducibility | Responsible | Direction |
 |---|---|---|---|---|---|---|
-| 1 | [The payload format is guessed: relations and ids the server does not read](#1-the-payload-format-is-guessed-relations-and-ids-the-server-does-not-read) | 18 | 0 | high | MCP server — input schema; roomle-ui — payload normalisation | Declare the group and root fields in the input schema; map the relation forms the model writes |
 | 2 | [One piece of furniture is sent as several groups](#2-one-piece-of-furniture-is-sent-as-several-groups) | 8 | 0 | medium | roomle-ui — HI tool command | Merge the groups of one call whose relations name each other's roots |
 | 3 | [Wall units in a group of their own stand on the floor](#3-wall-units-in-a-group-of-their-own-stand-on-the-floor) | 4 | 0 | medium | roomle-ui — wall placement | Hang a group of wall units only at the wall-unit height, or say that it stands on the floor |
 | 4 | [Edits are made with the wrong tool](#4-edits-are-made-with-the-wrong-tool) | 9 | 4 | high | MCP server — tool descriptions; roomle-ui — results | Open the edit tools' descriptions with the user's words; a hint when a replace is an edit |
@@ -75,34 +73,6 @@ result (11), the hinge of a new row end (12) and the speed (13) come with it.
 Run 50 (the seven-turn kitchen conversation) ended with Mistral's rate limit in all three attempts;
 it counts as an environment failure and is in none of the issues.
 
-## 1. The payload format is guessed: relations and ids the server does not read
-
-**Problem.** The model writes relations as `"relation": "rightOf"` without a neighbour, as
-`relation` with `relatesTo`, `relToRootId` or `neighbourId`, or as a `relations` list beside the
-roots, and leaves the first root without an id while the others refer to it as `root_1` or
-`ROOT#1` (the server names it `root-1`). The server ignores these relations and docks the roots in
-a row in their order — right when the order is the row's, wrong otherwise: a START piece of an
-endless wardrobe ends up second (45). Runs 01, 05, 08, 11,
-12, 14, 18, 36, 40, 42, 45, 46, 47, 51, 52 (relations), and the id-less roots in 16 runs.
-
-**Finding.** The errors come from the runs that skip `get-authoring-rules`: 16 of the 19 runs with
-a create but without the rules show them, 2 of the 16 runs that fetched the rules. The input schema
-of `create-or-replace-groups` declares `posGroups` as `record(string, unknown)`; the field names
-are only in the rules and in the prose of the description.
-
-**Direction.** Declare the group fields (`id`, `placement`, `attributes`, `roots`) and the root
-fields (`id`, `articleId`, `attributes`, `rightOf`, `leftOf`, `onTop`, `above`, `behind`) in the
-input schema, open to further fields, so the schema carries the format a model reads first — low
-effort. Map the pair forms (`relation` with a neighbour key) onto the relation and name the mapping
-in `corrections`. Resolve `root_1`, `ROOT#1` and the like to the n-th root, or give an id-less root
-an id that matches the model's reference.
-
-**mistral-large-4.** Every create of its 52 runs names its relations with the declared keys and
-ids, with or without `get-authoring-rules`.
-
-**Reproduce.** `mcp-test-2026-10-17_10-50-12`, mistral-large-latest 45 (`image-only-tall-units`).
-**Reproducibility:** high — 18 of 56 runs of `mistral-large-latest`.
-
 ## 2. One piece of furniture is sent as several groups
 
 **Problem.** A row, a wardrobe pair or a whole kitchen comes as several posGroups with the same
@@ -113,7 +83,7 @@ origin (08). Runs 06, 08, 11, 12, 40, 46, 47, 51 — 51 sends a kitchen as 33 gr
 **Direction.** When the posGroups of one call name each other's roots in their relations, merge
 them into one group and say so in `corrections` — the intent is clear from the relations. Check
 whether the "ONE group" sentence reaches a model that skips `get-authoring-rules` (it is in the
-tool description, issue 1).
+tool description).
 
 **mistral-large-4.** Every create sends one posGroup per piece of furniture, a whole L-shaped
 kitchen with its wall units and hood included (large-4 47, 50).

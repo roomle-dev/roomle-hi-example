@@ -206,6 +206,24 @@ describe('example launcher', { skip: process.platform === 'win32' }, () => {
     }
   );
 
+  test('serves the favicon of the page', async () => {
+    const example = await startLauncher([]);
+    try {
+      const page = await example.fetchPath('/');
+      assert.match(
+        await page.text(),
+        /<link rel="icon" type="image\/png" href="\.\/favicon\.png" \/>/
+      );
+      const favicon = await example.fetchPath('/favicon.png');
+      assert.ok(favicon.ok);
+      assert.equal(favicon.headers.get('content-type'), 'image/png');
+      assert.ok((await favicon.arrayBuffer()).byteLength > 0);
+      assert.equal((await example.fetchPath('/favicon.ico')).status, 404);
+    } finally {
+      example.kill();
+    }
+  });
+
   test('passes the options of an azure deployment', async () => {
     const example = await startLauncher([
       'azure:mistral-large-3',

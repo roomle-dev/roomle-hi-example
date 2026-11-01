@@ -63,7 +63,8 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 
 | File | Responsibility |
 | ---- | -------------- |
-| `hi-sc-example/index.html` | the two views: the sign-in form with the cookie dialog, the planner container |
+| `hi-sc-example/index.html` | the two views: the sign-in form with the cookie dialog, the planner container; links `/favicon.png` as the icon |
+| `hi-sc-example/public/favicon.png` | the favicon of the page — Vite serves `public/` at the root, also under the base path of the start page |
 | `hi-sc-example/src/main.ts` | the form: prefills it, reads the settings, signs in, asks for the cookie, swaps the views |
 | `hi-sc-example/src/fields-cookie.ts` | `storedFields`, `fieldsCookie`: the sign-in fields in the cookie |
 | `hi-sc-example/src/hi-server.ts` | `BACKEND_IDS`, `hiProxyBaseUrl`, `fetchBackend`, `resolveLibraryId`, `modelProxyConfig` |

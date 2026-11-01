@@ -8,7 +8,7 @@ import { createServer } from 'vite';
 import { EXAMPLES, START_PAGE, route } from './examples.mjs';
 
 const PORT = 3300;
-const CONTENT_TYPES = { '.jpg': 'image/jpeg' };
+const CONTENT_TYPES = { '.jpg': 'image/jpeg', '.png': 'image/png' };
 
 const openInBrowser = (url) => {
   const command =
